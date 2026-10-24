@@ -6,6 +6,18 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/Persistent.unity
+    guid: 67a1052b1b2d6b6409bffd05a5dbc13f
+  - enabled: 1
+    path: Assets/Scenes/MainMenu.unity
+    guid: 8d1609f90b3acac40a461b6a14e00097
+  - enabled: 1
+    path: Assets/Scenes/Restaurant.unity
+    guid: 7d0426eff2d1ac643be26ab4c3bc0733
+  - enabled: 1
+    path: Assets/Scenes/City.unity
+    guid: ac1a4e8a49446984d88988c76c641468
+  - enabled: 0
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
   m_configObjects:
