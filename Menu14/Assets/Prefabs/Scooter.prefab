@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &3312020435556998
+--- !u!1 &1773403230106701254
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,31 +8,31 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 5718578931553008369}
+  - component: {fileID: 9126819757496515064}
   m_Layer: 0
-  m_Name: CameraPivot
+  m_Name: LeanPivot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &5718578931553008369
+--- !u!4 &9126819757496515064
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3312020435556998}
+  m_GameObject: {fileID: 1773403230106701254}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0.6, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 2744560471803309428}
-  m_Father: {fileID: 1743419673555012986}
+  - {fileID: 3506610249037370341}
+  m_Father: {fileID: 5618892944149477858}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2284567220128495069
+--- !u!1 &2353401207293987306
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -40,12 +40,12 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2651449356210509842}
-  - component: {fileID: 295914760991931883}
-  - component: {fileID: 4485427648305459827}
-  - component: {fileID: 3770656145320436749}
-  - component: {fileID: 722923800688384389}
-  - component: {fileID: 5155124576307244301}
+  - component: {fileID: 5618892944149477858}
+  - component: {fileID: 2961954914272449053}
+  - component: {fileID: 3891486994364701830}
+  - component: {fileID: 6133712734803222008}
+  - component: {fileID: 3762710262668927520}
+  - component: {fileID: 8660454295990783023}
   m_Layer: 0
   m_Name: Scooter
   m_TagString: Untagged
@@ -53,37 +53,37 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &2651449356210509842
+--- !u!4 &5618892944149477858
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2284567220128495069}
+  m_GameObject: {fileID: 2353401207293987306}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 1.001, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1743419673555012986}
+  - {fileID: 9126819757496515064}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &295914760991931883
+--- !u!33 &2961954914272449053
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2284567220128495069}
+  m_GameObject: {fileID: 2353401207293987306}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
---- !u!23 &4485427648305459827
+--- !u!23 &3891486994364701830
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2284567220128495069}
+  m_GameObject: {fileID: 2353401207293987306}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -126,13 +126,13 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!136 &3770656145320436749
+--- !u!136 &6133712734803222008
 CapsuleCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2284567220128495069}
+  m_GameObject: {fileID: 2353401207293987306}
   m_Material: {fileID: 13400000, guid: c0cbbde434c56644b80f2c1fd07fbdb6, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
@@ -149,13 +149,13 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
---- !u!54 &722923800688384389
+--- !u!54 &3762710262668927520
 Rigidbody:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2284567220128495069}
+  m_GameObject: {fileID: 2353401207293987306}
   serializedVersion: 5
   m_Mass: 50
   m_LinearDamping: 0
@@ -176,28 +176,31 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &5155124576307244301
+--- !u!114 &8660454295990783023
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2284567220128495069}
+  m_GameObject: {fileID: 2353401207293987306}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d1ef11713f9eb9446b1f427aa8ffa19d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ScooterController
-  maxSpeed: 8
-  acceleration: 3
-  brakeForce: 8
-  rollingDrag: 1
+  maxSpeed: 15
+  acceleration: 1
+  brakeForce: 5
+  rollingDrag: 0.5
+  maxReverseSpeed: 1
+  reverseAcceleration: 1
+  stopThreshold: 0.3
   maxLeanAngle: 20
-  leanSpeed: 2.5
+  leanSpeed: 1
   returnSpeed: 1.5
   turnSpeed: 70
-  leanPivot: {fileID: 0}
---- !u!1 &3839320922338080460
+  leanPivot: {fileID: 9126819757496515064}
+--- !u!1 &4651816530821641109
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -205,10 +208,10 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2744560471803309428}
-  - component: {fileID: 5136137099152064136}
-  - component: {fileID: 2573222950171276332}
-  - component: {fileID: 4477996009863511383}
+  - component: {fileID: 8711354119632913512}
+  - component: {fileID: 8210761153363532596}
+  - component: {fileID: 7415046792762538293}
+  - component: {fileID: 1823045094884327228}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -216,28 +219,28 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &2744560471803309428
+--- !u!4 &8711354119632913512
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3839320922338080460}
+  m_GameObject: {fileID: 4651816530821641109}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 5718578931553008369}
+  m_Father: {fileID: 3506610249037370341}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!20 &5136137099152064136
+--- !u!20 &8210761153363532596
 Camera:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3839320922338080460}
+  m_GameObject: {fileID: 4651816530821641109}
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 1
@@ -282,21 +285,21 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!81 &2573222950171276332
+--- !u!81 &7415046792762538293
 AudioListener:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3839320922338080460}
+  m_GameObject: {fileID: 4651816530821641109}
   m_Enabled: 1
---- !u!114 &4477996009863511383
+--- !u!114 &1823045094884327228
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3839320922338080460}
+  m_GameObject: {fileID: 4651816530821641109}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
@@ -334,7 +337,7 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
---- !u!1 &9176055765307908228
+--- !u!1 &6762659656078317856
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -342,27 +345,27 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1743419673555012986}
+  - component: {fileID: 3506610249037370341}
   m_Layer: 0
-  m_Name: LeanPivot
+  m_Name: CameraPivot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &1743419673555012986
+--- !u!4 &3506610249037370341
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9176055765307908228}
+  m_GameObject: {fileID: 6762659656078317856}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.6, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 5718578931553008369}
-  m_Father: {fileID: 2651449356210509842}
+  - {fileID: 8711354119632913512}
+  m_Father: {fileID: 9126819757496515064}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

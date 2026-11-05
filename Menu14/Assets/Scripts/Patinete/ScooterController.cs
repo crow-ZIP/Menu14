@@ -14,6 +14,11 @@ public class ScooterController : MonoBehaviour
     public float brakeForce = 8f;      // m/s² al pulsar S
     public float rollingDrag = 1f;     // m/s² de frenado natural sin pulsar nada
 
+    [Header("Marcha atrás")]
+    public float maxReverseSpeed = 2f;     // m/s, más lenta que hacia delante
+    public float reverseAcceleration = 1.5f;
+    public float stopThreshold = 0.1f;     // por debajo de esto se considera parado
+
     [Header("Inclinación y giro")]
     public float maxLeanAngle = 20f;   // grados de inclinación máxima
     public float leanSpeed = 2.5f;     // rapidez al inclinarse (0→1 por segundo)
@@ -70,18 +75,35 @@ public class ScooterController : MonoBehaviour
     {
         float dt = Time.fixedDeltaTime;
 
-        // 1) Velocidad
-        if (throttle) currentSpeed += acceleration * dt;
-        if (brake) currentSpeed -= brakeForce * dt;
-        if (!throttle && !brake) currentSpeed -= rollingDrag * dt;
-        currentSpeed = Mathf.Clamp(currentSpeed, 0f, maxSpeed);
+        // 1) Velocidad (positiva = adelante, negativa = marcha atrás)
+        if (throttle)
+        {
+            if (currentSpeed < -stopThreshold)
+                currentSpeed += brakeForce * dt;        // W yendo hacia atrás = frenar
+            else
+                currentSpeed += acceleration * dt;      // acelerar hacia delante
+        }
+        else if (brake)
+        {
+            if (currentSpeed > stopThreshold)
+                currentSpeed -= brakeForce * dt;        // S yendo hacia delante = frenar
+            else
+                currentSpeed -= reverseAcceleration * dt; // parado + S = marcha atrás
+        }
+        else
+        {
+            // Sin teclas: frena solo hacia 0, en ambos sentidos
+            currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, rollingDrag * dt);
+        }
+        currentSpeed = Mathf.Clamp(currentSpeed, -maxReverseSpeed, maxSpeed);
 
         // 2) Inclinación (va hacia la tecla pulsada o vuelve al centro)
         float rate = leanInput != 0f ? leanSpeed : returnSpeed;
         leanAmount = Mathf.MoveTowards(leanAmount, leanInput, rate * dt);
 
         // 3) Giro: depende de la inclinación y solo si te mueves
-        float speedFactor = Mathf.Clamp01(currentSpeed / (maxSpeed * 0.3f));
+        // Con velocidad negativa el giro se invierte, como en un vehículo real
+        float speedFactor = Mathf.Clamp(currentSpeed / (maxSpeed * 0.3f), -1f, 1f);
         float yaw = leanAmount * turnSpeed * speedFactor * dt;
         rb.MoveRotation(rb.rotation * Quaternion.Euler(0f, yaw, 0f));
 
@@ -95,7 +117,8 @@ public class ScooterController : MonoBehaviour
     void OnCollisionEnter(Collision col)
     {
         // Choque frontal fuerte: pierde velocidad
-        if (Vector3.Dot(col.GetContact(0).normal, transform.forward) < -0.7f)
+        Vector3 moveDir = transform.forward * Mathf.Sign(currentSpeed);
+        if (Vector3.Dot(col.GetContact(0).normal, moveDir) < -0.7f)
             currentSpeed *= 0.2f;
     }
 }
