@@ -19,6 +19,15 @@ public class GameManager : MonoBehaviour
     public NightConfig CurrentNight => nights[CurrentNightIndex];
     public bool IsLoading { get; private set; }
 
+    // ---- Sospecha (se mantiene entre noches; solo se reinicia en partida nueva) ----
+    public int Suspicion { get; private set; }
+    public event System.Action<int> OnSuspicionChanged;   // nuevo valor
+
+    // ---- Pedido que lleva el jugador ahora mismo (null = ninguno) ----
+    public DeliveryRequest ActiveOrder { get; private set; }
+    public bool HasActiveOrder => ActiveOrder != null;
+    public event System.Action<DeliveryRequest> OnOrderLost;
+
     private string currentScene;
 
     // Editor helper: if you press Play while City or Restaurant is open,
@@ -58,6 +67,9 @@ public class GameManager : MonoBehaviour
     public void StartNewGame()
     {
         CurrentNightIndex = 0;
+        Suspicion = 0;
+        ActiveOrder = null;
+        OnSuspicionChanged?.Invoke(Suspicion);
         LoadScene(RestaurantScene);
     }
 
@@ -77,6 +89,30 @@ public class GameManager : MonoBehaviour
             Debug.Log("All nights completed!");
             LoadScene(MainMenuScene);
         }
+    }
+
+    // ---- Pedidos y sospecha ----
+    public void TakeOrder(DeliveryRequest order) => ActiveOrder = order;
+    public void CompleteOrder() => ActiveOrder = null;
+
+    public void AddSuspicion(int amount)
+    {
+        Suspicion += amount;
+        OnSuspicionChanged?.Invoke(Suspicion);
+    }
+
+    // Lo llama un policía cuando detecta al jugador.
+    public void PlayerCaught(int suspicionPenalty)
+    {
+        if (HasActiveOrder)
+        {
+            DeliveryRequest lost = ActiveOrder;
+            ActiveOrder = null;
+            OnOrderLost?.Invoke(lost);
+            Debug.Log($"Pedido perdido: {lost.customerName}");
+        }
+        AddSuspicion(suspicionPenalty);
+        Debug.Log($"¡Pillado por la policía! Sospecha = {Suspicion}");
     }
 
     // ---- Scene switching ----

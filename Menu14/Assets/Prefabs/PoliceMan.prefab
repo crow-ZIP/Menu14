@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 2433455290864362760}
   - component: {fileID: 3582667920469807409}
   - component: {fileID: 6985551617272182940}
+  - component: {fileID: 6611619895176773969}
   m_Layer: 0
   m_Name: PoliceMan
   m_TagString: Untagged
@@ -114,3 +115,25 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &6611619895176773969
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5341091526693788853}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f98dcfacb753904ab039c07d76f6766, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PoliceOfficer
+  viewDistance: 12
+  viewAngle: 70
+  eyeHeight: 1.6
+  visionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  timeToDetect: 0.75
+  forgetSpeed: 0.5
+  cooldown: 5
+  suspicionPenalty: 1

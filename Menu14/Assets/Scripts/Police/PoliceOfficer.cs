@@ -1,0 +1,102 @@
+using UnityEngine;
+
+/// <summary>
+/// Policía con cono de visión. Si ve al patinete durante 'timeToDetect' segundos,
+/// el jugador pierde el pedido y sube la sospecha.
+/// Solo usa transform.forward para mirar, así que funciona igual estático o patrullando.
+/// </summary>
+public class PoliceOfficer : MonoBehaviour
+{
+    [Header("Visión")]
+    public float viewDistance = 12f;
+    [Range(1f, 360f)] public float viewAngle = 70f;   // ángulo total del cono
+    public float eyeHeight = 1.6f;
+    public LayerMask visionMask = ~0;                 // qué capas bloquean la vista (edificios, coches...)
+
+    [Header("Detección")]
+    public float timeToDetect = 0.75f;   // segundos viéndote antes de pillarte
+    public float forgetSpeed = 0.5f;     // a qué ritmo baja la barra si te escondes
+    public float cooldown = 5f;          // tras pillarte, te ignora este tiempo
+    public int suspicionPenalty = 1;
+
+    /// <summary>0 = no te ve, 1 = pillado. Útil para un icono "!" o una barra.</summary>
+    public float DetectionProgress => detection / timeToDetect;
+    public bool SeesPlayer { get; private set; }
+
+    Transform player;
+    Collider playerCollider;
+    float detection;
+    float cooldownTimer;
+
+    void Start() => FindPlayer();
+
+    void FindPlayer()
+    {
+        var scooter = FindFirstObjectByType<ScooterController>();
+        if (scooter == null) return;
+        player = scooter.transform;
+        playerCollider = scooter.GetComponent<Collider>();
+    }
+
+    void Update()
+    {
+        if (player == null) { FindPlayer(); if (player == null) return; }
+
+        if (cooldownTimer > 0f)
+        {
+            cooldownTimer -= Time.deltaTime;
+            detection = 0f;
+            SeesPlayer = false;
+            return;
+        }
+
+        SeesPlayer = CanSeePlayer();
+        if (SeesPlayer) detection += Time.deltaTime;
+        else detection -= forgetSpeed * Time.deltaTime;
+        detection = Mathf.Clamp(detection, 0f, timeToDetect);
+
+        if (detection >= timeToDetect) Catch();
+    }
+
+    bool CanSeePlayer()
+    {
+        Vector3 eye = transform.position + Vector3.up * eyeHeight;
+        Vector3 target = playerCollider != null ? playerCollider.bounds.center : player.position;
+        Vector3 toPlayer = target - eye;
+        float dist = toPlayer.magnitude;
+
+        // 1) Distancia
+        if (dist > viewDistance) return false;
+
+        // 2) Ángulo (en horizontal)
+        Vector3 flat = new Vector3(toPlayer.x, 0f, toPlayer.z);
+        if (Vector3.Angle(transform.forward, flat) > viewAngle * 0.5f) return false;
+
+        // 3) Línea de visión: lo primero que toque el rayo tiene que ser el patinete
+        if (Physics.Raycast(eye, toPlayer / dist, out RaycastHit hit, dist + 0.5f, visionMask, QueryTriggerInteraction.Ignore))
+            return hit.collider.GetComponentInParent<ScooterController>() != null;
+
+        return false;
+    }
+
+    void Catch()
+    {
+        detection = 0f;
+        cooldownTimer = cooldown;
+        if (GameManager.Instance != null)
+            GameManager.Instance.PlayerCaught(suspicionPenalty);
+    }
+
+    // Dibuja el cono en la vista Scene (rojo = te está viendo)
+    void OnDrawGizmosSelected()
+    {
+        Vector3 eye = transform.position + Vector3.up * eyeHeight;
+        Gizmos.color = SeesPlayer ? Color.red : Color.yellow;
+        Vector3 left = Quaternion.Euler(0f, -viewAngle * 0.5f, 0f) * transform.forward;
+        Vector3 right = Quaternion.Euler(0f, viewAngle * 0.5f, 0f) * transform.forward;
+        Gizmos.DrawLine(eye, eye + left * viewDistance);
+        Gizmos.DrawLine(eye, eye + right * viewDistance);
+        Gizmos.DrawLine(eye + left * viewDistance, eye + transform.forward * viewDistance);
+        Gizmos.DrawLine(eye + right * viewDistance, eye + transform.forward * viewDistance);
+    }
+}
