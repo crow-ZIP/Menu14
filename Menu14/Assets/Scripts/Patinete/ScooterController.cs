@@ -1,17 +1,19 @@
 using UnityEngine;
-using UnityEngine.InputSystem; // Si usas el Input Manager antiguo, mira el comentario en ReadInput()
+using UnityEngine.InputSystem;
 
 /// <summary>
-/// Control simple de patinete en primera persona.
-/// W = acelerar, S = frenar, A/D = inclinarse (la inclinación hace girar).
+/// Control arcade del patinete en primera persona.
+/// Usa la acción global "Player/Move": adelante = acelerar, atrás = frenar / marcha atrás,
+/// izquierda/derecha = inclinarse (la inclinación hace girar). Funciona con teclado y con mando.
+/// Solo responde a la entrada mientras alguien va montado (lo decide ScooterMount).
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
 public class ScooterController : MonoBehaviour
 {
     [Header("Velocidad")]
     public float maxSpeed = 8f;        // m/s (~29 km/h)
-    public float acceleration = 3f;    // m/s² al pulsar W
-    public float brakeForce = 8f;      // m/s² al pulsar S
+    public float acceleration = 3f;    // m/s² con el acelerador a fondo
+    public float brakeForce = 8f;      // m/s² con el freno a fondo
     public float rollingDrag = 1f;     // m/s² de frenado natural sin pulsar nada
 
     [Header("Marcha atrás")]
@@ -19,23 +21,35 @@ public class ScooterController : MonoBehaviour
     public float reverseAcceleration = 1.5f;
     public float stopThreshold = 0.1f;     // por debajo de esto se considera parado
 
+    [Header("Choques")]
+    [Tooltip("m/s que la velocidad real puede quedarse por debajo de la deseada antes de considerar que algo nos frena")]
+    public float blockedTolerance = 0.5f;
+
     [Header("Inclinación y giro")]
     public float maxLeanAngle = 20f;   // grados de inclinación máxima
     public float leanSpeed = 2.5f;     // rapidez al inclinarse (0→1 por segundo)
     public float returnSpeed = 1.5f;   // rapidez al volver al centro al soltar
     public float turnSpeed = 70f;      // grados/s de giro con inclinación máxima
 
+    [Header("Cámara")]
+    [Tooltip("Parte de la inclinación que nota la cámara: 1 = toda, 0 = nada (horizonte siempre recto)")]
+    [Range(0f, 1f)] public float cameraRollFactor = 0.5f;
+
     [Header("Referencias")]
-    public Transform leanPivot;        // Hijo que se inclina (modelo + cámara)
+    [Tooltip("Hijo con el pivote en el suelo que se inclina (modelo, manillar y cámara)")]
+    public Transform leanPivot;
+    [Tooltip("Hijo de leanPivot que lleva la cámara; compensa parte de la inclinación")]
+    public Transform cameraPivot;
 
     public float Speed => currentSpeed;    // Útil para un HUD o sonido
     public float Lean => leanAmount;       // -1 izquierda, +1 derecha
+    public bool IsRidden { get; private set; }
 
     Rigidbody rb;
+    InputAction moveAction;
     float currentSpeed;
     float leanAmount;
-    bool throttle, brake;
-    float leanInput;
+    float throttleInput, brakeInput, leanInput;
 
     void Awake()
     {
@@ -44,60 +58,86 @@ public class ScooterController : MonoBehaviour
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
     }
 
+    void Start()
+    {
+        moveAction = InputSystem.actions.FindAction("Player/Move");
+    }
+
+    /// <summary>Lo llama ScooterMount al montar (true) y al desmontar (false).</summary>
+    public void SetRidden(bool ridden)
+    {
+        IsRidden = ridden;
+        if (!ridden) throttleInput = brakeInput = leanInput = 0f;
+    }
+
     void Update()
     {
         ReadInput();
 
         // Inclinación visual: solo rota el hijo, la física no se inclina
+        float roll = -leanAmount * maxLeanAngle;
         if (leanPivot != null)
-            leanPivot.localRotation = Quaternion.Euler(0f, 0f, -leanAmount * maxLeanAngle);
+            leanPivot.localRotation = Quaternion.Euler(0f, 0f, roll);
+
+        // La cámara deshace parte de la inclinación para no marear
+        if (cameraPivot != null)
+            cameraPivot.localRotation = Quaternion.Euler(0f, 0f, -roll * (1f - cameraRollFactor));
     }
 
     void ReadInput()
     {
-        var kb = Keyboard.current;
-        if (kb == null) return;
+        if (!IsRidden || moveAction == null)
+        {
+            throttleInput = brakeInput = leanInput = 0f;
+            return;
+        }
 
-        throttle = kb.wKey.isPressed;
-        brake = kb.sKey.isPressed;
-
-        leanInput = 0f;
-        if (kb.aKey.isPressed) leanInput -= 1f;
-        if (kb.dKey.isPressed) leanInput += 1f;
-
-        // Input Manager antiguo:
-        // throttle = Input.GetKey(KeyCode.W);
-        // brake = Input.GetKey(KeyCode.S);
-        // leanInput = (Input.GetKey(KeyCode.D) ? 1f : 0f) - (Input.GetKey(KeyCode.A) ? 1f : 0f);
+        // Valores analógicos: con mando se puede acelerar o inclinarse a medias
+        Vector2 move = moveAction.ReadValue<Vector2>();
+        throttleInput = Mathf.Clamp01(move.y);
+        brakeInput = Mathf.Clamp01(-move.y);
+        leanInput = Mathf.Clamp(move.x, -1f, 1f);
     }
 
     void FixedUpdate()
     {
         float dt = Time.fixedDeltaTime;
 
+        // 0) Si un choque o un obstáculo nos ha frenado de verdad, la velocidad interna baja con él.
+        //    Así no se acumula velocidad empujando contra una pared.
+        //    En las subidas la velocidad real tiene parte vertical: se cuenta para no frenar en rampas.
+        Vector3 vel = rb.linearVelocity;
+        float forwardSpeed = Vector3.Dot(vel, transform.forward);
+        float climb = Mathf.Max(vel.y, 0f);
+        float realSpeed = Mathf.Sign(forwardSpeed) * Mathf.Sqrt(forwardSpeed * forwardSpeed + climb * climb);
+        if (currentSpeed > 0f && currentSpeed - realSpeed > blockedTolerance)
+            currentSpeed = Mathf.Max(realSpeed, 0f);
+        else if (currentSpeed < 0f && realSpeed - currentSpeed > blockedTolerance)
+            currentSpeed = Mathf.Min(realSpeed, 0f);
+
         // 1) Velocidad (positiva = adelante, negativa = marcha atrás)
-        if (throttle)
+        if (throttleInput > 0f)
         {
             if (currentSpeed < -stopThreshold)
-                currentSpeed += brakeForce * dt;        // W yendo hacia atrás = frenar
+                currentSpeed += brakeForce * throttleInput * dt;        // adelante yendo hacia atrás = frenar
             else
-                currentSpeed += acceleration * dt;      // acelerar hacia delante
+                currentSpeed += acceleration * throttleInput * dt;      // acelerar hacia delante
         }
-        else if (brake)
+        else if (brakeInput > 0f)
         {
             if (currentSpeed > stopThreshold)
-                currentSpeed -= brakeForce * dt;        // S yendo hacia delante = frenar
+                currentSpeed -= brakeForce * brakeInput * dt;           // atrás yendo hacia delante = frenar
             else
-                currentSpeed -= reverseAcceleration * dt; // parado + S = marcha atrás
+                currentSpeed -= reverseAcceleration * brakeInput * dt;  // parado + atrás = marcha atrás
         }
         else
         {
-            // Sin teclas: frena solo hacia 0, en ambos sentidos
+            // Sin pulsar nada: frena solo hacia 0, en ambos sentidos
             currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, rollingDrag * dt);
         }
         currentSpeed = Mathf.Clamp(currentSpeed, -maxReverseSpeed, maxSpeed);
 
-        // 2) Inclinación (va hacia la tecla pulsada o vuelve al centro)
+        // 2) Inclinación (va hacia la entrada o vuelve al centro)
         float rate = leanInput != 0f ? leanSpeed : returnSpeed;
         leanAmount = Mathf.MoveTowards(leanAmount, leanInput, rate * dt);
 
@@ -109,16 +149,8 @@ public class ScooterController : MonoBehaviour
 
         // 4) Mover hacia delante conservando la gravedad
         Vector3 v = transform.forward * currentSpeed;
-        v.y = rb.linearVelocity.y;          // En Unity 2022 o anterior: rb.velocity
+        v.y = rb.linearVelocity.y;
         rb.linearVelocity = v;
         rb.angularVelocity = Vector3.zero;
-    }
-
-    void OnCollisionEnter(Collision col)
-    {
-        // Choque frontal fuerte: pierde velocidad
-        Vector3 moveDir = transform.forward * Mathf.Sign(currentSpeed);
-        if (Vector3.Dot(col.GetContact(0).normal, moveDir) < -0.7f)
-            currentSpeed *= 0.2f;
     }
 }
