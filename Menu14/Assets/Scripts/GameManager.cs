@@ -68,6 +68,7 @@ public class GameManager : MonoBehaviour
     {
         CurrentNightIndex = 0;
         Suspicion = 0;
+        nextDeliveryIndex = 0;
         ActiveOrder = null;
         OnSuspicionChanged?.Invoke(Suspicion);
         LoadScene(RestaurantScene);
@@ -82,6 +83,7 @@ public class GameManager : MonoBehaviour
         if (CurrentNightIndex < nights.Length - 1)
         {
             CurrentNightIndex++;
+            nextDeliveryIndex = 0;
             LoadScene(RestaurantScene);
         }
         else
@@ -94,6 +96,20 @@ public class GameManager : MonoBehaviour
     // ---- Pedidos y sospecha ----
     public void TakeOrder(DeliveryRequest order) => ActiveOrder = order;
     public void CompleteOrder() => ActiveOrder = null;
+
+    // ---- Reparto ----
+    private int nextDeliveryIndex;
+    public bool HasDeliveriesLeft => nextDeliveryIndex < CurrentNight.deliveries.Count;
+
+    // Te da el siguiente pedido de la noche. Devuelve false si no se puede.
+    public bool TakeNextOrder()
+    {
+        if (HasActiveOrder || !HasDeliveriesLeft) return false;
+
+        ActiveOrder = CurrentNight.deliveries[nextDeliveryIndex];
+        nextDeliveryIndex++;
+        return true;
+    }
 
     public void AddSuspicion(int amount)
     {
