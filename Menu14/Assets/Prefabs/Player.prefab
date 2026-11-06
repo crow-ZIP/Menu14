@@ -300,7 +300,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerLook
   cameraPivot: {fileID: 6162645155195934879}
-  mouseSensitivity: 0.1
+  mouseSensitivity: 0.05
   gamepadSensitivity: 180
   minPitchAngle: -80
   maxPitchAngle: 80
