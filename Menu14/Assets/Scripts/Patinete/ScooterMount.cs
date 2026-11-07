@@ -1,12 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-/// <summary>
-/// Montar y desmontar del patinete con la acción global "Player/Interact" (E o botón norte del mando).
-/// A pie: si el jugador está cerca, al pulsar se desactiva el Player y se activan la cámara y los brazos del patinete.
-/// Montado: si vas casi parado, al pulsar te bajas a un lado libre y vuelve el Player.
-/// Solo hay una cámara activa a la vez.
-/// </summary>
 [RequireComponent(typeof(ScooterController))]
 public class ScooterMount : MonoBehaviour
 {
@@ -30,7 +24,7 @@ public class ScooterMount : MonoBehaviour
     [Tooltip("Se activan al montar y se desactivan al bajarse (la cámara del patinete y los brazos)")]
     public GameObject[] riderOnly;
 
-    // Medidas del CharacterController del Player (center 0.9, height 1.8, radius 0.35)
+    // Las mismas medidas que el CharacterController del Player
     const float PlayerRadius = 0.35f;
     const float PlayerHeight = 1.8f;
 
@@ -54,7 +48,7 @@ public class ScooterMount : MonoBehaviour
 
     void Update()
     {
-        // WasPressedThisFrame no espera al "Hold" de la acción: responde al pulsar
+        // WasPressedThisFrame no espera al Hold que tiene Interact
         if (interactAction == null || !interactAction.WasPressedThisFrame()) return;
 
         if (scooter.IsRidden) TryDismount();
@@ -71,10 +65,10 @@ public class ScooterMount : MonoBehaviour
 
     void Mount()
     {
-        // Al desactivar el Player, PlayerLook libera el ratón: hay que volver a bloquearlo después
         player.SetActive(false);
         SetRiderObjects(true);
         scooter.SetRidden(true);
+        // PlayerLook libera el ratón en OnDisable
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
@@ -87,12 +81,11 @@ public class ScooterMount : MonoBehaviour
         scooter.SetRidden(false);
         SetRiderObjects(false);
 
-        // El Player está desactivado, así que se puede mover sin pelearse con su CharacterController
+        // Se mueve antes de activarlo para que el CharacterController no lo impida
         player.transform.SetPositionAndRotation(feet, Quaternion.Euler(0f, transform.eulerAngles.y, 0f));
         player.SetActive(true);
     }
 
-    /// <summary>Prueba a la izquierda, a la derecha y detrás del patinete, y devuelve el primer hueco libre.</summary>
     bool FindDismountPosition(out Vector3 feet)
     {
         float groundY = scooterCollider != null ? scooterCollider.bounds.min.y : transform.position.y;
@@ -102,7 +95,6 @@ public class ScooterMount : MonoBehaviour
         foreach (Vector3 dir in directions)
         {
             Vector3 candidate = center + dir * dismountOffset;
-            // Un poco por encima del suelo para que la cápsula no toque el propio suelo
             Vector3 bottom = candidate + Vector3.up * (PlayerRadius + 0.05f);
             Vector3 top = candidate + Vector3.up * (PlayerHeight - PlayerRadius);
             if (!Physics.CheckCapsule(bottom, top, PlayerRadius, dismountBlockMask, QueryTriggerInteraction.Ignore))

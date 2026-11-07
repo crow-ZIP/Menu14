@@ -65,7 +65,6 @@ public class PoliceOfficer : MonoBehaviour
         Vector3 toPlayer = target - eye;
         float dist = toPlayer.magnitude;
 
-        // 0) Un patinete aparcado sin nadie encima no cuenta
         var scooter = player.GetComponent<ScooterController>();
         if (scooter != null && !scooter.IsRidden) return false;
 

@@ -1,12 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-/// <summary>
-/// Control arcade del patinete en primera persona.
-/// Usa la acción global "Player/Move": adelante = acelerar, atrás = frenar / marcha atrás,
-/// izquierda/derecha = inclinarse (la inclinación hace girar). Funciona con teclado y con mando.
-/// Solo responde a la entrada mientras alguien va montado (lo decide ScooterMount).
-/// </summary>
 [RequireComponent(typeof(Rigidbody))]
 public class ScooterController : MonoBehaviour
 {
@@ -63,7 +57,6 @@ public class ScooterController : MonoBehaviour
         moveAction = InputSystem.actions.FindAction("Player/Move");
     }
 
-    /// <summary>Lo llama ScooterMount al montar (true) y al desmontar (false).</summary>
     public void SetRidden(bool ridden)
     {
         IsRidden = ridden;
@@ -79,7 +72,6 @@ public class ScooterController : MonoBehaviour
         if (leanPivot != null)
             leanPivot.localRotation = Quaternion.Euler(0f, 0f, roll);
 
-        // La cámara deshace parte de la inclinación para no marear
         if (cameraPivot != null)
             cameraPivot.localRotation = Quaternion.Euler(0f, 0f, -roll * (1f - cameraRollFactor));
     }
@@ -92,7 +84,6 @@ public class ScooterController : MonoBehaviour
             return;
         }
 
-        // Valores analógicos: con mando se puede acelerar o inclinarse a medias
         Vector2 move = moveAction.ReadValue<Vector2>();
         throttleInput = Mathf.Clamp01(move.y);
         brakeInput = Mathf.Clamp01(-move.y);
@@ -103,9 +94,7 @@ public class ScooterController : MonoBehaviour
     {
         float dt = Time.fixedDeltaTime;
 
-        // 0) Si un choque o un obstáculo nos ha frenado de verdad, la velocidad interna baja con él.
-        //    Así no se acumula velocidad empujando contra una pared.
-        //    En las subidas la velocidad real tiene parte vertical: se cuenta para no frenar en rampas.
+        // Si algo nos frena, currentSpeed baja con la velocidad real (la subida de una rampa no cuenta como frenazo)
         Vector3 vel = rb.linearVelocity;
         float forwardSpeed = Vector3.Dot(vel, transform.forward);
         float climb = Mathf.Max(vel.y, 0f);

@@ -1,17 +1,13 @@
 using UnityEngine;
 
-/// <summary>
-/// Estira cada brazo (una cápsula) desde el hombro hasta el puño del manillar en cada fotograma.
-/// Así las manos siguen agarradas aunque el manillar y la cámara se inclinen distinto.
-/// </summary>
 public class ScooterArms : MonoBehaviour
 {
     [System.Serializable]
     public struct Arm
     {
-        public Transform shoulder;   // punto fijo respecto a la cámara
-        public Transform grip;       // punto en el puño del manillar
-        public Transform capsule;    // cápsula que hace de brazo (altura 2 a escala 1, como la primitiva de Unity)
+        public Transform shoulder;
+        public Transform grip;
+        public Transform capsule;
     }
 
     public Arm[] arms;

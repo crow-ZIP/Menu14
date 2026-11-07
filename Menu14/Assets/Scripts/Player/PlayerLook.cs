@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-// Movimiento de la cabeza en primera persona.
 public class PlayerLook : MonoBehaviour
 {
     [Tooltip("La cámara hija del jugador")]
@@ -26,7 +25,7 @@ public class PlayerLook : MonoBehaviour
 
     void OnEnable()
     {
-        Cursor.lockState = CursorLockMode.Locked; // ratón fijo en el centro; Esc lo libera en el editor
+        Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
 
@@ -40,14 +39,13 @@ public class PlayerLook : MonoBehaviour
     {
         Vector2 look = lookAction.ReadValue<Vector2>();
 
-        // El ratón ya da un desplazamiento por fotograma; el joystick da una dirección
-        // que hay que escalar por el tiempo transcurrido.
+        // El ratón da píxeles por fotograma; el stick, una dirección que se escala por el tiempo
         bool fromMouse = lookAction.activeControl != null && lookAction.activeControl.device is Pointer;
         Vector2 delta = fromMouse ? look * mouseSensitivity : look * gamepadSensitivity * Time.deltaTime;
 
-        transform.Rotate(0f, delta.x, 0f); // yaw: gira todo el jugador
+        transform.Rotate(0f, delta.x, 0f);
 
         pitchAngle = Mathf.Clamp(pitchAngle - delta.y, minPitchAngle, maxPitchAngle);
-        cameraPivot.localRotation = Quaternion.Euler(pitchAngle, 0f, 0f); // pitch: solo la cámara
+        cameraPivot.localRotation = Quaternion.Euler(pitchAngle, 0f, 0f);
     }
 }
