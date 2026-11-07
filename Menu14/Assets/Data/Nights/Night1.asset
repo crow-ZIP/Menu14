@@ -17,9 +17,11 @@ MonoBehaviour:
   - customerName: Ana
     destinationId: Entrega1
     timeLimit: 120
+    reward: 150
   - customerName: Luis
     destinationId: Entrega1
     timeLimit: 120
+    reward: 150
   policeCount: 2
   trafficDensity: 0.3
-  moneyGoal: 500
+  moneyGoal: 100

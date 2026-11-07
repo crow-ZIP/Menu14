@@ -19,9 +19,29 @@ public class GameManager : MonoBehaviour
     public NightConfig CurrentNight => nights[CurrentNightIndex];
     public bool IsLoading { get; private set; }
 
+    [Header("Partida")]
+    [Tooltip("Deuda total. Se gana en cuanto el excedente acumulado de las noches llega a esto")]
+    [SerializeField] private int totalMoneyGoal = 1000;
+    [Tooltip("Si la sospecha llega a este valor, pierdes la partida")]
+    [SerializeField] private int maxSuspicion = 5;
+
+    public int TotalMoneyGoal => totalMoneyGoal;
+    public int MaxSuspicion => maxSuspicion;
+    public bool IsGameOver { get; private set; }
+
     // ---- Sospecha (se mantiene entre noches; solo se reinicia en partida nueva) ----
     public int Suspicion { get; private set; }
     public event System.Action<int> OnSuspicionChanged;   // nuevo valor
+
+    // ---- Dinero ----
+    // Lo ganado esta noche. Al acabar la noche se pagan los intereses (moneyGoal)
+    // y solo el excedente va a la deuda.
+    public int NightMoney { get; private set; }
+    // Deuda pagada hasta ahora (suma de los excedentes de las noches).
+    public int TotalMoney { get; private set; }
+    public int NightGoal => CurrentNight.moneyGoal;
+    public int NightSurplus => Mathf.Max(0, NightMoney - NightGoal);
+    public event System.Action OnMoneyChanged;
 
     // ---- Pedido que lleva el jugador ahora mismo (null = ninguno) ----
     public DeliveryRequest ActiveOrder { get; private set; }
@@ -68,9 +88,13 @@ public class GameManager : MonoBehaviour
     {
         CurrentNightIndex = 0;
         Suspicion = 0;
+        NightMoney = 0;
+        TotalMoney = 0;
+        IsGameOver = false;
         ActiveOrder = null;
         nextDeliveryIndex = 0;
         OnSuspicionChanged?.Invoke(Suspicion);
+        OnMoneyChanged?.Invoke();
         LoadScene(RestaurantScene);
     }
 
@@ -78,25 +102,88 @@ public class GameManager : MonoBehaviour
     public void GoToRestaurant() => LoadScene(RestaurantScene);
     public void BackToMenu() => LoadScene(MainMenuScene);
 
+    // Fin de la noche: pagar intereses, el excedente va a la deuda, y ver si se gana, se pierde o se sigue.
     public void CompleteNight()
     {
+        if (IsGameOver) return;
+
+        int interest = NightGoal;
+        if (NightMoney < interest)
+        {
+            GameOver($"No llegaste a los intereses de la noche ({NightMoney} / {interest} €)");
+            return;
+        }
+
+        int surplus = NightMoney - interest;
+        TotalMoney += surplus;
+        NightMoney = 0;
+        ActiveOrder = null;
+        OnMoneyChanged?.Invoke();
+        Debug.Log($"Noche {CurrentNight.nightNumber} completada: intereses {interest} €, +{surplus} € a la deuda. " +
+                  $"Deuda pagada: {TotalMoney} / {totalMoneyGoal} €");
+
+        if (TotalMoney >= totalMoneyGoal)
+        {
+            Victory();
+            return;
+        }
+
         if (CurrentNightIndex < nights.Length - 1)
         {
             CurrentNightIndex++;
             nextDeliveryIndex = 0;
-            ActiveOrder = null;
             LoadScene(RestaurantScene);
         }
         else
         {
-            Debug.Log("All nights completed!");
-            LoadScene(MainMenuScene);
+            GameOver("Se acabaron las noches sin pagar toda la deuda");
         }
+    }
+
+    // ---- Fin de partida ----
+    // De momento solo escriben en consola y vuelven al menú. Más adelante, una pantalla propia.
+    public void GameOver(string reason)
+    {
+        if (IsGameOver) return;
+        IsGameOver = true;
+        ActiveOrder = null;
+        Debug.Log($"PARTIDA PERDIDA: {reason}");
+        ReleaseCursor();
+        BackToMenu();
+    }
+
+    private void Victory()
+    {
+        IsGameOver = true;
+        Debug.Log($"¡HAS GANADO! Deuda pagada: {TotalMoney} / {totalMoneyGoal} €");
+        ReleaseCursor();
+        BackToMenu();
+    }
+
+    // Si acabas montado en el patinete, nadie desbloquea el ratón al ir al menú.
+    private void ReleaseCursor()
+    {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 
     // ---- Pedidos y sospecha ----
     public void TakeOrder(DeliveryRequest order) => ActiveOrder = order;
-    public void CompleteOrder() => ActiveOrder = null;
+    public void CompleteOrder()
+    {
+        if (!HasActiveOrder) return;
+        int reward = ActiveOrder.reward;
+        ActiveOrder = null;
+        AddNightMoney(reward);
+        Debug.Log($"+{reward} €. Esta noche: {NightMoney} / {NightGoal} €");
+    }
+
+    // Suma (o resta, si es negativo) al dinero de esta noche. Nunca baja de 0.
+    public void AddNightMoney(int amount)
+    {
+        NightMoney = Mathf.Max(0, NightMoney + amount);
+        OnMoneyChanged?.Invoke();
+    }
 
     // ---- Reparto: qué pedido de la noche toca ahora ----
     private int nextDeliveryIndex;
@@ -114,13 +201,18 @@ public class GameManager : MonoBehaviour
 
     public void AddSuspicion(int amount)
     {
-        Suspicion += amount;
+        Suspicion = Mathf.Min(Suspicion + amount, maxSuspicion);
         OnSuspicionChanged?.Invoke(Suspicion);
+
+        if (Suspicion >= maxSuspicion)
+            GameOver("La sospecha llegó al máximo");
     }
 
-    // Lo llama un policía cuando detecta al jugador.
-    public void PlayerCaught(int suspicionPenalty)
+    // Lo llama un policía cuando detecta al jugador: pierdes el pedido, pagas la fianza y sube la sospecha.
+    public void PlayerCaught(int suspicionPenalty, int bailCost)
     {
+        if (IsGameOver) return;
+
         if (HasActiveOrder)
         {
             DeliveryRequest lost = ActiveOrder;
@@ -128,8 +220,9 @@ public class GameManager : MonoBehaviour
             OnOrderLost?.Invoke(lost);
             Debug.Log($"Pedido perdido: {lost.customerName}");
         }
+        AddNightMoney(-bailCost);
+        Debug.Log($"¡Pillado por la policía! Fianza: -{bailCost} €. Sospecha = {Suspicion + suspicionPenalty}");
         AddSuspicion(suspicionPenalty);
-        Debug.Log($"¡Pillado por la policía! Sospecha = {Suspicion}");
     }
 
     // ---- Scene switching ----
