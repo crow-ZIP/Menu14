@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// Policía con cono de visión. Si ve al patinete durante 'timeToDetect' segundos,
+/// Policía con cono de visión. Si ve al jugador (a pie o en patinete) durante 'timeToDetect' segundos,
 /// el jugador pierde el pedido y sube la sospecha.
 /// Solo usa transform.forward para mirar, así que funciona igual estático o patrullando.
 /// </summary>
@@ -23,25 +23,11 @@ public class PoliceOfficer : MonoBehaviour
     public float DetectionProgress => detection / timeToDetect;
     public bool SeesPlayer { get; private set; }
 
-    Transform player;
-    Collider playerCollider;
     float detection;
     float cooldownTimer;
 
-    void Start() => FindPlayer();
-
-    void FindPlayer()
-    {
-        var scooter = FindFirstObjectByType<ScooterController>();
-        if (scooter == null) return;
-        player = scooter.transform;
-        playerCollider = scooter.GetComponent<Collider>();
-    }
-
     void Update()
     {
-        if (player == null) { FindPlayer(); if (player == null) return; }
-
         if (cooldownTimer > 0f)
         {
             cooldownTimer -= Time.deltaTime;
@@ -60,14 +46,13 @@ public class PoliceOfficer : MonoBehaviour
 
     bool CanSeePlayer()
     {
-        Vector3 eye = transform.position + Vector3.up * eyeHeight;
-        Vector3 target = playerCollider != null ? playerCollider.bounds.center : player.position;
-        Vector3 toPlayer = target - eye;
-        float dist = toPlayer.magnitude;
+        // 0) Dónde está el jugador ahora: a pie el Player, montado el patinete
+        Collider playerCollider = PlayerLocator.Current;
+        if (playerCollider == null) return false;
 
-        // 0) Un patinete aparcado sin nadie encima no cuenta
-        var scooter = player.GetComponent<ScooterController>();
-        if (scooter != null && !scooter.IsRidden) return false;
+        Vector3 eye = transform.position + Vector3.up * eyeHeight;
+        Vector3 toPlayer = playerCollider.bounds.center - eye;
+        float dist = toPlayer.magnitude;
 
         // 1) Distancia
         if (dist > viewDistance) return false;
@@ -76,9 +61,10 @@ public class PoliceOfficer : MonoBehaviour
         Vector3 flat = new Vector3(toPlayer.x, 0f, toPlayer.z);
         if (Vector3.Angle(transform.forward, flat) > viewAngle * 0.5f) return false;
 
-        // 3) Línea de visión: lo primero que toque el rayo tiene que ser el patinete
+        // 3) Línea de visión: lo primero que toque el rayo tiene que ser el jugador
+        //    (un patinete aparcado tapa la vista como cualquier otro objeto)
         if (Physics.Raycast(eye, toPlayer / dist, out RaycastHit hit, dist + 0.5f, visionMask, QueryTriggerInteraction.Ignore))
-            return hit.collider.GetComponentInParent<ScooterController>() != null;
+            return PlayerLocator.IsPlayer(hit.collider);
 
         return false;
     }
