@@ -2,7 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// Policía con cono de visión. Si ve al jugador (a pie o en patinete) durante 'timeToDetect' segundos,
-/// el jugador pierde el pedido y sube la sospecha.
+/// el jugador pierde el pedido, sube la sospecha y paga una fianza.
 /// Solo usa transform.forward para mirar, así que funciona igual estático o patrullando.
 /// </summary>
 public class PoliceOfficer : MonoBehaviour
@@ -18,6 +18,8 @@ public class PoliceOfficer : MonoBehaviour
     public float forgetSpeed = 0.5f;     // a qué ritmo baja la barra si te escondes
     public float cooldown = 5f;          // tras pillarte, te ignora este tiempo
     public int suspicionPenalty = 1;
+    [Tooltip("Fianza: dinero que se resta del ganado esta noche al pillarte")]
+    public int bailCost = 50;
 
     /// <summary>0 = no te ve, 1 = pillado. Útil para un icono "!" o una barra.</summary>
     public float DetectionProgress => detection / timeToDetect;
@@ -77,7 +79,7 @@ public class PoliceOfficer : MonoBehaviour
         detection = 0f;
         cooldownTimer = cooldown;
         if (GameManager.Instance != null)
-            GameManager.Instance.PlayerCaught(suspicionPenalty);
+            GameManager.Instance.PlayerCaught(suspicionPenalty, bailCost);
     }
 
     // Dibuja el cono en la vista Scene (rojo = te está viendo)
