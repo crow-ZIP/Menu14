@@ -23,7 +23,7 @@ public class GameManager : MonoBehaviour
     [Tooltip("Deuda total. Se gana en cuanto el excedente acumulado de las noches llega a esto")]
     [SerializeField] private int totalMoneyGoal = 1000;
     [Tooltip("Si la sospecha llega a este valor, pierdes la partida")]
-    [SerializeField] private int maxSuspicion = 5;
+    [SerializeField] private int maxSuspicion = 100;
 
     public int TotalMoneyGoal => totalMoneyGoal;
     public int MaxSuspicion => maxSuspicion;

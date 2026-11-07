@@ -133,7 +133,8 @@ MonoBehaviour:
   visionMask:
     serializedVersion: 2
     m_Bits: 4294967295
-  timeToDetect: 0.75
+  timeToDetect: 1.25
   forgetSpeed: 0.5
   cooldown: 5
-  suspicionPenalty: 1
+  suspicionPenalty: 20
+  bailCost: 0

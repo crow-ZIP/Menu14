@@ -1,10 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Policía con cono de visión. Si ve al jugador (a pie o en patinete) durante 'timeToDetect' segundos,
-/// el jugador pierde el pedido, sube la sospecha y paga una fianza.
-/// Solo usa transform.forward para mirar, así que funciona igual estático o patrullando.
-/// </summary>
 public class PoliceOfficer : MonoBehaviour
 {
     [Header("Visión")]
@@ -14,14 +9,13 @@ public class PoliceOfficer : MonoBehaviour
     public LayerMask visionMask = ~0;                 // qué capas bloquean la vista (edificios, coches...)
 
     [Header("Detección")]
-    public float timeToDetect = 0.75f;   // segundos viéndote antes de pillarte
+    public float timeToDetect = 1.25f;   // segundos viéndote antes de pillarte
     public float forgetSpeed = 0.5f;     // a qué ritmo baja la barra si te escondes
     public float cooldown = 5f;          // tras pillarte, te ignora este tiempo
-    public int suspicionPenalty = 1;
-    [Tooltip("Fianza: dinero que se resta del ganado esta noche al pillarte")]
-    public int bailCost = 50;
+    public int suspicionPenalty = 20;
+    [Tooltip("Fianza: dinero que se resta del ganado esta noche al pillarte (0 = sin fianza)")]
+    public int bailCost = 0;
 
-    /// <summary>0 = no te ve, 1 = pillado. Útil para un icono "!" o una barra.</summary>
     public float DetectionProgress => detection / timeToDetect;
     public bool SeesPlayer { get; private set; }
 
@@ -38,7 +32,10 @@ public class PoliceOfficer : MonoBehaviour
             return;
         }
 
-        SeesPlayer = CanSeePlayer();
+        GameManager gm = GameManager.Instance;
+        bool carrying = gm != null && gm.HasActiveOrder && !gm.IsGameOver;
+
+        SeesPlayer = carrying && CanSeePlayer();
         if (SeesPlayer) detection += Time.deltaTime;
         else detection -= forgetSpeed * Time.deltaTime;
         detection = Mathf.Clamp(detection, 0f, timeToDetect);
