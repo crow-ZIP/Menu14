@@ -19,7 +19,7 @@ MonoBehaviour:
     timeLimit: 120
     reward: 150
   - customerName: Luis
-    destinationId: Entrega1
+    destinationId: Entrega2
     timeLimit: 120
     reward: 150
   policeCount: 2
