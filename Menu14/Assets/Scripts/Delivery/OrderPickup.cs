@@ -1,9 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Zona del restaurante: al entrar el jugador (a pie o en patinete), recoge el siguiente pedido de la noche.
-/// Necesita un collider marcado como Is Trigger en el mismo objeto.
-/// </summary>
 public class OrderPickup : MonoBehaviour
 {
     void OnTriggerEnter(Collider other)

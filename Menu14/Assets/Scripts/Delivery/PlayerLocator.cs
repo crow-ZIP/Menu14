@@ -1,11 +1,6 @@
 using UnityEngine;
 
-/// <summary>
-/// Dice quién es "el jugador" en cada momento.
-/// A pie es el Player; montado es el patinete (ScooterMount desactiva el Player al montar).
-/// Lo usan el restaurante, los puntos de entrega y la policía, así funcionan igual a pie o montado.
-/// No hay que ponerlo en ningún objeto: es una clase estática.
-/// </summary>
+
 public static class PlayerLocator
 {
     static PlayerMovement player;

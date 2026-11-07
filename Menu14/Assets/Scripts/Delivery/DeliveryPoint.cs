@@ -1,10 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Punto de entrega en la ciudad. Acepta el pedido actual si su destinationId coincide.
-/// Se entrega al entrar el jugador, a pie o en patinete.
-/// Necesita un collider marcado como Is Trigger en el mismo objeto.
-/// </summary>
 public class DeliveryPoint : MonoBehaviour
 {
     public string destinationId = "Entrega1";

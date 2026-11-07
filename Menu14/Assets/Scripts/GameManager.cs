@@ -185,6 +185,16 @@ public class GameManager : MonoBehaviour
         OnMoneyChanged?.Invoke();
     }
 
+    // El cliente se ha cansado de esperar: pierdes el encargo sin cobrar (lo llama DeliveryTimer).
+    public void ExpireOrder()
+    {
+        if (!HasActiveOrder) return;
+        DeliveryRequest lost = ActiveOrder;
+        ActiveOrder = null;
+        OnOrderLost?.Invoke(lost);
+        Debug.Log($"{lost.customerName} se ha cansado de esperar: encargo perdido");
+    }
+
     // ---- Reparto: qué pedido de la noche toca ahora ----
     private int nextDeliveryIndex;
     public bool HasDeliveriesLeft => nextDeliveryIndex < CurrentNight.deliveries.Count;
