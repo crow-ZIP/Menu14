@@ -56,8 +56,8 @@ public class PoliceOfficer : MonoBehaviour
         Vector3 toPlayer = playerCollider.bounds.center - eye;
         float dist = toPlayer.magnitude;
 
-        var scooter = player.GetComponent<ScooterController>();
-        if (scooter != null && !scooter.IsRidden) return false;
+        //var scooter = player.GetComponent<ScooterController>();
+        //if (scooter != null && !scooter.IsRidden) return false;
 
         // 1) Distancia
         if (dist > viewDistance) return false;
