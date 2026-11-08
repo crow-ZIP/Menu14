@@ -2,10 +2,13 @@ using System.Collections;
 using TMPro;
 using UnityEngine;
 
-// Provisional hasta que llegue el móvil de T11
+// Encargo actual: se escribe en el móvil (label) y, si se asigna, también en la pantalla principal (screenLabel).
+// Que screenLabel solo se vea con el móvil cerrado lo decide PhoneUI (campo Closed Hint).
 public class OrderHUD : MonoBehaviour
 {
     [SerializeField] private TMP_Text label;
+    [Tooltip("Opcional: copia del mismo texto en la pantalla principal")]
+    [SerializeField] private TMP_Text screenLabel;
     [SerializeField] private DeliveryTimer timer;
 
     [Tooltip("Segundos que se ve el aviso al entregar o perder un encargo")]
@@ -48,7 +51,7 @@ public class OrderHUD : MonoBehaviour
     private void Update()
     {
         GameManager gm = GameManager.Instance;
-        if (gm == null || label == null) return;
+        if (gm == null || (label == null && screenLabel == null)) return;
 
         // Si el encargo desaparece sin haberse perdido, es que se ha entregado
         if (shownOrder != null && gm.ActiveOrder != shownOrder && lostOrder != shownOrder && !gm.IsGameOver)
@@ -58,18 +61,24 @@ public class OrderHUD : MonoBehaviour
         if (messageTimer > 0f)
         {
             messageTimer -= Time.deltaTime;
-            label.text = message;
+            SetText(message);
         }
         else if (gm.HasActiveOrder)
         {
-            label.text = $"Encargo de {gm.ActiveOrder.customerName} · {FormatTime()}";
+            SetText($"Encargo de {gm.ActiveOrder.customerName} · {FormatTime()}");
         }
         else
         {
-            label.text = gm.HasDeliveriesLeft
+            SetText(gm.HasDeliveriesLeft
                 ? "Recoge el siguiente encargo en la puerta del Dragón Negro"
-                : "No quedan encargos esta noche";
+                : "No quedan encargos esta noche");
         }
+    }
+
+    private void SetText(string text)
+    {
+        if (label != null) label.text = text;
+        if (screenLabel != null) screenLabel.text = text;
     }
 
     private string FormatTime()

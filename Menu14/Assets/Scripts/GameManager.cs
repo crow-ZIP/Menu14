@@ -48,6 +48,11 @@ public class GameManager : MonoBehaviour
     public bool HasActiveOrder => ActiveOrder != null;
     public event System.Action<DeliveryRequest> OnOrderLost;
 
+    // ---- Estado de cada pedido de la noche (para la lista de encargos del móvil) ----
+    public enum OrderStatus { Pending, InProgress, Delivered, Lost }
+    private OrderStatus[] orderStatus;   // uno por pedido de CurrentNight.deliveries
+    public event System.Action OnOrdersChanged;
+
     private string currentScene;
 
     // Editor helper: if you press Play while City or Restaurant is open,
@@ -93,6 +98,7 @@ public class GameManager : MonoBehaviour
         IsGameOver = false;
         ActiveOrder = null;
         nextDeliveryIndex = 0;
+        ResetOrderStatus();
         OnSuspicionChanged?.Invoke(Suspicion);
         OnMoneyChanged?.Invoke();
         LoadScene(RestaurantScene);
@@ -132,6 +138,7 @@ public class GameManager : MonoBehaviour
         {
             CurrentNightIndex++;
             nextDeliveryIndex = 0;
+            ResetOrderStatus();
             LoadScene(RestaurantScene);
         }
         else
@@ -173,6 +180,7 @@ public class GameManager : MonoBehaviour
     {
         if (!HasActiveOrder) return;
         int reward = ActiveOrder.reward;
+        SetActiveOrderStatus(OrderStatus.Delivered);
         ActiveOrder = null;
         AddNightMoney(reward);
         Debug.Log($"+{reward} €. Esta noche: {NightMoney} / {NightGoal} €");
@@ -190,6 +198,7 @@ public class GameManager : MonoBehaviour
     {
         if (!HasActiveOrder) return;
         DeliveryRequest lost = ActiveOrder;
+        SetActiveOrderStatus(OrderStatus.Lost);
         ActiveOrder = null;
         OnOrderLost?.Invoke(lost);
         Debug.Log($"{lost.customerName} se ha cansado de esperar: encargo perdido");
@@ -206,7 +215,38 @@ public class GameManager : MonoBehaviour
 
         ActiveOrder = CurrentNight.deliveries[nextDeliveryIndex];
         nextDeliveryIndex++;
+        SetActiveOrderStatus(OrderStatus.InProgress);
         return true;
+    }
+
+    // Estado del pedido número 'index' de esta noche.
+    public OrderStatus GetOrderStatus(int index)
+    {
+        EnsureOrderStatus();
+        return orderStatus[index];
+    }
+
+    // Se crea al primer uso, así también funciona si pulsas Play directamente en una escena de prueba.
+    private void EnsureOrderStatus()
+    {
+        int count = CurrentNight.deliveries.Count;
+        if (orderStatus == null || orderStatus.Length != count)
+            orderStatus = new OrderStatus[count];   // todos empiezan en Pending
+    }
+
+    private void ResetOrderStatus()
+    {
+        orderStatus = null;
+        OnOrdersChanged?.Invoke();
+    }
+
+    private void SetActiveOrderStatus(OrderStatus status)
+    {
+        int index = CurrentNight.deliveries.IndexOf(ActiveOrder);
+        if (index < 0) return;
+        EnsureOrderStatus();
+        orderStatus[index] = status;
+        OnOrdersChanged?.Invoke();
     }
 
     public void AddSuspicion(int amount)
@@ -226,6 +266,7 @@ public class GameManager : MonoBehaviour
         if (HasActiveOrder)
         {
             DeliveryRequest lost = ActiveOrder;
+            SetActiveOrderStatus(OrderStatus.Lost);
             ActiveOrder = null;
             OnOrderLost?.Invoke(lost);
             Debug.Log($"Pedido perdido: {lost.customerName}");
