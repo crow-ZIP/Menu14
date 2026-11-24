@@ -20,15 +20,18 @@ public class OrderHUD : MonoBehaviour
     private DeliveryRequest lostOrder;
     private string message;
     private float messageTimer;
+    private int lostFrame = -1;
 
     private IEnumerator Start()
     {
+        ScooterCrash.Crashed += HandleCrash;
         while (GameManager.Instance == null) yield return null;
         GameManager.Instance.OnOrderLost += HandleOrderLost;
     }
 
     private void OnDestroy()
     {
+        ScooterCrash.Crashed -= HandleCrash;
         if (GameManager.Instance != null)
             GameManager.Instance.OnOrderLost -= HandleOrderLost;
     }
@@ -36,10 +39,34 @@ public class OrderHUD : MonoBehaviour
     private void HandleOrderLost(DeliveryRequest order)
     {
         lostOrder = order;
+        lostFrame = Time.frameCount;
+
+        GameManager gm = GameManager.Instance;
         bool expired = timer != null && timer.TimeLeft <= 0f;
-        ShowMessage(expired
-            ? $"{order.customerName} se ha cansado de esperar"
-            : $"La policía te ha quitado el encargo de {order.customerName}");
+        if (gm != null && gm.OrderIntegrity <= 0.001f)
+            ShowMessage($"El encargo de {order.customerName} ha quedado destrozado");
+        else if (expired)
+            ShowMessage($"{order.customerName} se ha cansado de esperar");
+        else
+            ShowMessage($"La policía te ha quitado el encargo de {order.customerName}");
+    }
+
+    private void HandleCrash(CrashCause cause)
+    {
+        string what = cause switch
+        {
+            CrashCause.Pothole => "¡Un bache! Te has caído del patinete",
+            CrashCause.Curb => "¡El bordillo! Te has caído del patinete",
+            _ => "¡Te has estampado! Te has caído del patinete",
+        };
+
+        GameManager gm = GameManager.Instance;
+        if (lostFrame == Time.frameCount)
+            ShowMessage($"{what}\n{message}");
+        else if (gm != null && gm.HasActiveOrder)
+            ShowMessage($"{what}\nEl encargo de {gm.ActiveOrder.customerName} queda al {IntegrityPercent(gm)} %");
+        else
+            ShowMessage(what);
     }
 
     private void ShowMessage(string text)
@@ -58,22 +85,28 @@ public class OrderHUD : MonoBehaviour
             ShowMessage($"Entregado a {shownOrder.customerName}");
         shownOrder = gm.ActiveOrder;
 
+        string text;
         if (messageTimer > 0f)
         {
             messageTimer -= Time.deltaTime;
-            SetText(message);
+            text = message;
         }
         else if (gm.HasActiveOrder)
         {
-            SetText($"Encargo de {gm.ActiveOrder.customerName} · {FormatTime()}");
+            text = $"Encargo de {gm.ActiveOrder.customerName} · {FormatTime()}";
+            if (gm.OrderIntegrity < 1f) text += $" · {IntegrityPercent(gm)} %";
         }
         else
         {
-            SetText(gm.HasDeliveriesLeft
+            text = gm.HasDeliveriesLeft
                 ? "Recoge el siguiente encargo en la puerta del Dragón Negro"
-                : "No quedan encargos esta noche");
+                : "No quedan encargos esta noche";
         }
+
+        SetText(text);
     }
+
+    private static int IntegrityPercent(GameManager gm) => Mathf.RoundToInt(gm.OrderIntegrity * 100f);
 
     private void SetText(string text)
     {
