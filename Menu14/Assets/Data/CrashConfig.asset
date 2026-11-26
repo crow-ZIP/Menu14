@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CrashConfig
   integrityLossPerFall: 0.25
   remountDelay: 4.5
+  remountGrace: 3
   potholeFallSpeed: 4
+  speedBumpFallSpeed: 6.5
   curbFallSpeed: 5
   obstacleFallSpeed: 3.5
   bounceSpeedFactor: 0.5

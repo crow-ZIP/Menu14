@@ -79,6 +79,17 @@ public class TrafficSpawner : MonoBehaviour
         return root.AddComponent<TrafficCar>();
     }
 
+    public void RebuildNetwork()
+    {
+        network.Build();
+        foreach (TrafficCar car in cars)
+        {
+            if (car == null) continue;
+            car.gameObject.SetActive(true);
+            if (!PlaceOnRandomLane(car)) Recycle(car);
+        }
+    }
+
     bool PlaceOnRandomLane(TrafficCar car)
     {
         for (int attempt = 0; attempt < 30; attempt++)
@@ -143,6 +154,7 @@ public class TrafficSpawner : MonoBehaviour
     bool IsFree(Vector3 p, TrafficCar ignore)
     {
         if (!FarFromPlayer(p)) return false;
+        if (LaneBlock.Covers(p, 3f)) return false;
         foreach (TrafficCar c in cars)
         {
             if (c == null || c == ignore || !c.gameObject.activeSelf) continue;

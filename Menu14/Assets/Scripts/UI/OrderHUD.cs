@@ -13,6 +13,8 @@ public class OrderHUD : MonoBehaviour
 
     [Tooltip("Segundos que se ve el aviso al entregar o perder un encargo")]
     [SerializeField] private float messageDuration = 3f;
+    [Tooltip("Segundos que se ve el aviso de una noche especial (manifestación, Nochevieja...)")]
+    [SerializeField] private float announceDuration = 9f;
     [Tooltip("Por debajo de estos segundos, el tiempo se pinta en rojo")]
     [SerializeField] private float warningTime = 20f;
 
@@ -25,6 +27,8 @@ public class OrderHUD : MonoBehaviour
     private IEnumerator Start()
     {
         ScooterCrash.Crashed += HandleCrash;
+        ObstacleSpawner.Announced += HandleAnnouncement;
+        if (ObstacleSpawner.LastMessage != null) HandleAnnouncement(ObstacleSpawner.LastSender, ObstacleSpawner.LastMessage);
         while (GameManager.Instance == null) yield return null;
         GameManager.Instance.OnOrderLost += HandleOrderLost;
     }
@@ -32,6 +36,7 @@ public class OrderHUD : MonoBehaviour
     private void OnDestroy()
     {
         ScooterCrash.Crashed -= HandleCrash;
+        ObstacleSpawner.Announced -= HandleAnnouncement;
         if (GameManager.Instance != null)
             GameManager.Instance.OnOrderLost -= HandleOrderLost;
     }
@@ -51,12 +56,23 @@ public class OrderHUD : MonoBehaviour
             ShowMessage($"La policía te ha quitado el encargo de {order.customerName}");
     }
 
+    private void HandleAnnouncement(string sender, string text)
+    {
+        ShowMessage(string.IsNullOrEmpty(sender) ? text : $"{sender}: {text}");
+        messageTimer = announceDuration;
+    }
+
     private void HandleCrash(CrashCause cause)
     {
         string what = cause switch
         {
-            CrashCause.Pothole => "¡Un bache! Te has caído del patinete",
+            CrashCause.Pothole => "¡Un resalto! Te has caído del patinete",
             CrashCause.Curb => "¡El bordillo! Te has caído del patinete",
+            CrashCause.Oil => "¡Aceite en la calzada! Has derrapado",
+            CrashCause.Glass => "¡Cristales! Has pinchado y te has caído",
+            CrashCause.Dog => "¡Un perro te ha mordido! Te has caído del patinete",
+            CrashCause.Firecracker => "¡Un petardo! Del susto te has caído del patinete",
+            CrashCause.Leash => "¡La correa de un perro! Te has enganchado y te has caído",
             _ => "¡Te has estampado! Te has caído del patinete",
         };
 
