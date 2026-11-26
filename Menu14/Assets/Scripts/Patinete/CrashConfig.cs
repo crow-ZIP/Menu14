@@ -8,10 +8,16 @@ public class CrashConfig : ScriptableObject
     [Range(0f, 1f)] public float integrityLossPerFall = 0.25f;
     [Tooltip("Segundos sin poder volver a montar después de caerte")]
     public float remountDelay = 4.5f;
+    [Tooltip("Segundos de invulnerabilidad al volver a montar después de una caída")]
+    public float remountGrace = 3f;
 
     [Header("Baches")]
     [Tooltip("Velocidad (m/s) a partir de la cual pasar por un bache te tira")]
     public float potholeFallSpeed = 4f;
+
+    [Header("Resaltos")]
+    [Tooltip("Velocidad (m/s) a partir de la cual pasar por un resalto te tira. El patinete va a 8 como mucho")]
+    public float speedBumpFallSpeed = 6.5f;
 
     [Header("Bordillos")]
     [Tooltip("Velocidad (m/s) de frente contra el bordillo a partir de la cual te caes. Más despacio, lo subes")]

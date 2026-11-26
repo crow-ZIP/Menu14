@@ -29,6 +29,18 @@ public class TrafficCar : MonoBehaviour
     [Tooltip("Si lleva este tiempo parado y el jugador está lejos, reaparece en otro sitio")]
     public float stuckTime = 10f;
 
+    [Header("Esquivar obstáculos")]
+    [Tooltip("Velocidad (m/s) al pasar por el carril contrario para esquivar un obstáculo")]
+    public float passSpeed = 4f;
+    [Tooltip("Metros libres que necesita en el carril contrario, más allá del obstáculo, para meterse")]
+    public float passClearance = 30f;
+    [Tooltip("Metros por segundo que se desplaza de lado al cambiar de carril")]
+    public float laneChangeRate = 2.5f;
+    [Tooltip("A esta distancia (m) del obstáculo empieza a cambiarse de carril si el contrario está libre")]
+    public float passStartDistance = 8f;
+
+    public static readonly List<TrafficCar> All = new List<TrafficCar>();
+
     public float Speed => speed;
     /// <summary>Parado en la línea de stop esperando a que se libere el cruce.</summary>
     public bool IsWaitingAtCrossroad { get; private set; }
@@ -50,6 +62,9 @@ public class TrafficCar : MonoBehaviour
     readonly List<Vector3> path = new List<Vector3>();
     int pathIndex;
     float speed, stuckTimer;
+    Vector3 lanePosition;
+    float sideShift, sideTarget;
+    LaneBlock passing;
 
     static readonly RaycastHit[] hits = new RaycastHit[16];
 
@@ -76,6 +91,9 @@ public class TrafficCar : MonoBehaviour
         Vector3 dir = laneTo.position - laneFrom.position;
         dir.y = 0f;
         this.position = position;
+        lanePosition = position;
+        sideShift = sideTarget = 0f;
+        passing = null;
         rotation = Quaternion.LookRotation(dir);
 
         // Teletransporte limpio: sin interpolación este paso, para que no se dibuje el trayecto
@@ -102,7 +120,7 @@ public class TrafficCar : MonoBehaviour
     {
         if (network == null || from == null) return;
         float dt = Time.fixedDeltaTime;
-        Vector3 pos = position;
+        Vector3 pos = lanePosition;
         teleported = false;
 
         // 0) Atascos: si lleva mucho parado y el jugador está lejos, se recoloca en otro sitio
@@ -119,6 +137,8 @@ public class TrafficCar : MonoBehaviour
         if (obstacle - safeGap <= 0f) speed = 0f;          // algo pegado delante: frenazo en seco
         limit = Mathf.Min(limit, StopSpeed(obstacle - safeGap));
 
+        if (!inCrossroad) limit = Mathf.Min(limit, LaneBlockLimit(pos));
+
         IsWaitingAtCrossroad = false;
         if (inCrossroad)
         {
@@ -127,7 +147,7 @@ public class TrafficCar : MonoBehaviour
         else if (!to.IsDeadEnd)
         {
             float toLine = Vector3.Distance(pos, path[path.Count - 1]);
-            bool haveCrossroad = reserved == to || (toLine < ReserveDistance && TryReserve(to));
+            bool haveCrossroad = reserved == to || (toLine < ReserveDistance && ExitClear() && TryReserve(to));
             if (haveCrossroad)
             {
                 if (turning) limit = Mathf.Min(limit, Mathf.Sqrt(turnSpeed * turnSpeed + 2f * brakeForce * toLine));
@@ -168,6 +188,12 @@ public class TrafficCar : MonoBehaviour
         if (teleported || !gameObject.activeSelf) return;
 
         // 3) Mirar hacia donde se mueve
+        if (inCrossroad) sideTarget = 0f;
+        float lateralRate = laneChangeRate * Mathf.Clamp01(speed / passSpeed + 0.25f);
+        sideShift = Mathf.MoveTowards(sideShift, sideTarget, lateralRate * dt);
+        lanePosition = pos;
+        pos += LaneRight() * sideShift;
+
         Vector3 delta = pos - position;
         delta.y = 0f;
         Quaternion rot = rotation;
@@ -191,6 +217,7 @@ public class TrafficCar : MonoBehaviour
                 if (spawner != null) spawner.Recycle(this);
                 return false;
             }
+            if (reserved != to && !ExitClear()) return false;
             if (!TryReserve(to)) return false;   // cruce ocupado: esperar en la línea
 
             path.Clear();
@@ -221,7 +248,117 @@ public class TrafficCar : MonoBehaviour
         reserved = null;
     }
 
-    void OnDisable() => ReleaseCrossroad();
+    void OnEnable() => All.Add(this);
+
+    void OnDisable()
+    {
+        All.Remove(this);
+        ReleaseCrossroad();
+    }
+
+    Vector3 LaneForward()
+    {
+        Vector3 f = to.position - from.position;
+        f.y = 0f;
+        return f.normalized;
+    }
+
+    Vector3 LaneRight() => Vector3.Cross(Vector3.up, LaneForward());
+
+    float LaneBlockLimit(Vector3 pos)
+    {
+        Vector3 f = LaneForward();
+        float halfCar = box.size.z * 0.5f;
+
+        if (passing != null)
+        {
+            float along = Vector3.Dot(passing.transform.position - pos, f);
+            if (along + passing.HalfLength + halfCar + 1f < 0f)
+            {
+                passing = null;
+                sideTarget = 0f;
+                return maxSpeed;
+            }
+            return passSpeed;
+        }
+
+        LaneBlock block = BlockAhead(pos, f, halfCar, out float distance);
+        if (block == null) return maxSpeed;
+
+        if (block.canPass && distance <= passStartDistance && OppositeLaneClear(pos, f, block, halfCar))
+        {
+            passing = block;
+            sideTarget = -2f * network.laneOffset;
+            return passSpeed;
+        }
+        return StopSpeed(distance - safeGap);
+    }
+
+    bool ExitClear()
+    {
+        if (next == null) return true;
+        Vector3 start = network.LaneStart(to, next);
+        if (LaneBlock.Covers(start, 3f)) return false;
+        Vector3 f = next.position - to.position;
+        f.y = 0f;
+        f.Normalize();
+        Vector3 r = Vector3.Cross(Vector3.up, f);
+        foreach (TrafficCar other in All)
+        {
+            if (other == this || !other.isActiveAndEnabled || other.speed > 1f) continue;
+            Vector3 v = other.position - start;
+            float along = Vector3.Dot(v, f);
+            if (Mathf.Abs(Vector3.Dot(v, r)) < 1.2f && along > -1f && along < 6f) return false;
+        }
+        return true;
+    }
+
+    LaneBlock BlockAhead(Vector3 pos, Vector3 f, float halfCar, out float distance)
+    {
+        Vector3 r = Vector3.Cross(Vector3.up, f);
+        float segmentLeft = Vector3.Dot(path[path.Count - 1] - pos, f);
+        LaneBlock best = null;
+        distance = float.MaxValue;
+        foreach (LaneBlock block in LaneBlock.Active)
+        {
+            Vector3 v = block.transform.position - pos;
+            if (Mathf.Abs(Vector3.Dot(v, r)) > block.width * 0.5f) continue;
+            float along = Vector3.Dot(v, f);
+            if (along + block.HalfLength < 0f || along - block.HalfLength > segmentLeft) continue;
+            float d = along - block.HalfLength - halfCar;
+            if (d < distance) { distance = d; best = block; }
+        }
+        return best;
+    }
+
+    bool OppositeLaneClear(Vector3 pos, Vector3 f, LaneBlock block, float halfCar)
+    {
+        Vector3 r = Vector3.Cross(Vector3.up, f);
+        float blockAlong = Vector3.Dot(block.transform.position - pos, f);
+        float behind = -halfCar - 3f;
+        float ahead = blockAlong + block.HalfLength + passClearance;
+        float oppositeCenter = -2f * network.laneOffset;
+
+        foreach (TrafficCar other in All)
+        {
+            if (other == this || !other.isActiveAndEnabled) continue;
+            Vector3 v = other.position - pos;
+            float lateral = Vector3.Dot(v, r);
+            float along = Vector3.Dot(v, f);
+            if (Mathf.Abs(lateral - oppositeCenter) < 2f && along > behind && along < ahead) return false;
+        }
+
+        foreach (LaneBlock other in LaneBlock.Active)
+        {
+            if (other == block) continue;
+            Vector3 v = other.transform.position - pos;
+            float lateral = Vector3.Dot(v, r);
+            float along = Vector3.Dot(v, f);
+            if (Mathf.Abs(lateral - oppositeCenter) < 2f && along > behind && along < blockAlong + block.HalfLength + 8f) return false;
+        }
+
+        return to.IsDeadEnd || TryReserve(to);
+    }
 
     float StopSpeed(float distance) => Mathf.Sqrt(2f * brakeForce * Mathf.Max(0f, distance));
 

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public enum CrashCause { Pothole, Curb, Obstacle }
+public enum CrashCause { Pothole, Curb, Obstacle, Oil, Glass, Dog, Firecracker, Leash }
 
 [RequireComponent(typeof(ScooterController), typeof(ScooterMount))]
 public class ScooterCrash : MonoBehaviour
@@ -9,9 +9,22 @@ public class ScooterCrash : MonoBehaviour
 
     public static event System.Action<CrashCause> Crashed;
 
+    public bool IsInvulnerable
+    {
+        get
+        {
+            UpdateGrace();
+            return Time.time < graceUntil;
+        }
+    }
+    public float GraceTimeLeft => Mathf.Max(0f, graceUntil - Time.time);
+
     ScooterController scooter;
     ScooterMount mount;
     Collider body;
+    bool wasRidden;
+    bool fellSinceMount;
+    float graceUntil;
 
     void Awake()
     {
@@ -23,23 +36,40 @@ public class ScooterCrash : MonoBehaviour
     void OnEnable() => scooter.CurbHit += HandleCurbHit;
     void OnDisable() => scooter.CurbHit -= HandleCurbHit;
 
+    void Update() => UpdateGrace();
+
+    void UpdateGrace()
+    {
+        bool ridden = scooter.IsRidden;
+        if (ridden && !wasRidden && fellSinceMount && config != null)
+        {
+            graceUntil = Time.time + config.remountGrace;
+            fellSinceMount = false;
+        }
+        wasRidden = ridden;
+    }
+
+    bool CanFall() => config != null && scooter.IsRidden && !IsInvulnerable;
+
     void OnTriggerEnter(Collider other)
     {
-        if (config == null || !scooter.IsRidden) return;
-        if (other.GetComponentInParent<Pothole>() == null) return;
+        if (!CanFall()) return;
+        Pothole pothole = other.GetComponentInParent<Pothole>();
+        if (pothole == null) return;
 
-        if (Mathf.Abs(scooter.Speed) >= config.potholeFallSpeed) Fall(CrashCause.Pothole, Forward());
+        float limit = pothole.speedBump ? config.speedBumpFallSpeed : config.potholeFallSpeed;
+        if (Mathf.Abs(scooter.Speed) >= limit) Fall(CrashCause.Pothole, Forward());
     }
 
     void HandleCurbHit(float impact)
     {
-        if (config == null || !scooter.IsRidden) return;
+        if (!CanFall()) return;
         if (impact >= config.curbFallSpeed) Fall(CrashCause.Curb, Forward());
     }
 
     void OnCollisionEnter(Collision collision)
     {
-        if (config == null || !scooter.IsRidden || body == null) return;
+        if (!CanFall() || body == null) return;
 
         float height = collision.collider.bounds.max.y - body.bounds.min.y;
         if (height <= scooter.maxStepHeight) return;
@@ -66,12 +96,19 @@ public class ScooterCrash : MonoBehaviour
         }
     }
 
+    public void KnockOff(CrashCause cause, Vector3 direction)
+    {
+        if (!CanFall() || scooter.IsFallen) return;
+        Fall(cause, direction);
+    }
+
     Vector3 Forward() => transform.forward * (scooter.Speed < 0f ? -1f : 1f);
 
     void Fall(CrashCause cause, Vector3 direction)
     {
         float factor = cause == CrashCause.Obstacle ? config.bounceSpeedFactor : config.launchSpeedFactor;
         float launch = Mathf.Max(Mathf.Abs(scooter.Speed) * factor, config.minLaunchSpeed);
+        fellSinceMount = true;
         mount.ThrowOff(config.remountDelay, direction * launch + Vector3.up * config.launchUpSpeed);
 
         if (GameManager.Instance != null)

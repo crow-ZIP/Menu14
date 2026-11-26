@@ -1,0 +1,185 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8a9394817077d04cb241d0f30fb773f, type: 3}
+  m_Name: ObstacleConfig
+  m_EditorClassIdentifier: Assembly-CSharp::ObstacleConfig
+  classicsPerNight: 060000000a0000000f000000140000001a000000
+  eventsPerNight: 0100000002000000040000000500000007000000
+  minDistanceBetween: 8
+  minDistanceOnRoad: 30
+  classicsOnRoadShare: 0.55
+  types:
+  - name: Resalto
+    prefab: {fileID: 6176803931766007156, guid: 06b952ee559f06c42ac42e728e7bc5a8, type: 3}
+    kind: 0
+    zones: 8
+    firstNight: 1
+    weight: 2
+    maxPerNight: 0
+  - name: "Resalto en el callej\xF3n"
+    prefab: {fileID: 5504574924123340734, guid: a9b302cb007343643b921b3c4bd0a3e1, type: 3}
+    kind: 0
+    zones: 2
+    firstNight: 1
+    weight: 1.5
+    maxPerNight: 0
+  - name: Mancha de aceite
+    prefab: {fileID: 5585492683833095878, guid: 494dbb25e9cd6434d9ef96d1c6311157, type: 3}
+    kind: 0
+    zones: 10
+    firstNight: 1
+    weight: 2
+    maxPerNight: 0
+  - name: "Cristales de botell\xF3n"
+    prefab: {fileID: 7526553662483168943, guid: 266565069e2eae344bc7d3b28a44f9e2, type: 3}
+    kind: 0
+    zones: 7
+    firstNight: 1
+    weight: 1
+    maxPerNight: 0
+  - name: Contenedor volcado
+    prefab: {fileID: 349012755769711620, guid: 51d873c97e9a217429702f0ad4fd7f76, type: 3}
+    kind: 0
+    zones: 3
+    firstNight: 1
+    weight: 0.6
+    maxPerNight: 0
+  - name: Obras en la acera
+    prefab: {fileID: 1225298271229478493, guid: 71e041421d6bf39499e783245bc858d1, type: 3}
+    kind: 0
+    zones: 3
+    firstNight: 1
+    weight: 0.5
+    maxPerNight: 0
+  - name: Patinetes de alquiler
+    prefab: {fileID: 6672164554536398085, guid: 5338f5da4d7f7fa49991ce4f31b0977a, type: 3}
+    kind: 0
+    zones: 7
+    firstNight: 1
+    weight: 0.8
+    maxPerNight: 0
+  - name: Terraza
+    prefab: {fileID: 8038779629667890017, guid: 40839ddee580f9141ad5021df4c93753, type: 3}
+    kind: 1
+    zones: 1
+    firstNight: 1
+    weight: 1
+    maxPerNight: 2
+  - name: Vecinos tomando la fresca
+    prefab: {fileID: 2052430745791856294, guid: 4e6a6994acc59e94f95575ac716a5c6a, type: 3}
+    kind: 1
+    zones: 1
+    firstNight: 1
+    weight: 1
+    maxPerNight: 2
+  - name: Coche averiado
+    prefab: {fileID: 8736785609790731405, guid: 186a539495926054990aad0c039ad4b1, type: 3}
+    kind: 1
+    zones: 8
+    firstNight: 1
+    weight: 1
+    maxPerNight: 2
+  - name: Furgoneta en doble fila
+    prefab: {fileID: 4287691076981753875, guid: 24c04dc1f7352bc4ca68a06ea5403e44, type: 3}
+    kind: 1
+    zones: 8
+    firstNight: 2
+    weight: 1
+    maxPerNight: 2
+  - name: Perro suelto
+    prefab: {fileID: 3194984875946709968, guid: 70d47c3ee7bf97f47abdf5f297730a74, type: 3}
+    kind: 1
+    zones: 8
+    firstNight: 2
+    weight: 1
+    maxPerNight: 2
+  - name: Correa extensible
+    prefab: {fileID: 4269556388621881394, guid: 557301787f21bc44ea46203493b92915, type: 3}
+    kind: 1
+    zones: 5
+    firstNight: 2
+    weight: 1
+    maxPerNight: 2
+  - name: Petardos
+    prefab: {fileID: 4396353661873774677, guid: f1727f786ecf74f4f8e64c1f57e68de9, type: 3}
+    kind: 1
+    zones: 7
+    firstNight: 3
+    weight: 0.8
+    maxPerNight: 2
+  - name: Obras en un carril
+    prefab: {fileID: 533473811587640797, guid: 5badcc2cf3f43f44e8e2559bee609db4, type: 3}
+    kind: 1
+    zones: 8
+    firstNight: 3
+    weight: 1
+    maxPerNight: 1
+  mapCenter: {x: 0, y: 0, z: 4}
+  centerFalloff: 25
+  alleyWeight: 2
+  specialNights:
+  - name: "Manifestaci\xF3n"
+    night: 4
+    sender: El Paisa
+    message: "Manifestaci\xF3n en la plaza. Dicen que el barrio es un desastre. Qu\xE9
+      exagerados. Rodea y entrega."
+    fixedPrefab: {fileID: 4076675262712624962, guid: 2a9364f9968a5dc4da2b11b181bdb304, type: 3}
+    extras:
+    - name: Cristales de la protesta
+      prefab: {fileID: 7526553662483168943, guid: 266565069e2eae344bc7d3b28a44f9e2, type: 3}
+      zones: 3
+      count: 3
+    extraTrafficDensity: 0.45
+  - name: Nochevieja
+    night: 5
+    sender: El Paisa
+    message: "Nochevieja. Todo el barrio en la calle y la polic\xEDa en cada esquina.
+      Feliz a\xF1o. Entrega."
+    fixedPrefab: {fileID: 7482044113526050285, guid: 2f6de895958bb6c47abd9cdacdb0bc4a, type: 3}
+    extras:
+    - name: Control con moto
+      prefab: {fileID: 6183394010615754750, guid: ebff3b4ac9559634ba273039ac66a0ec, type: 3}
+      zones: 1
+      count: 5
+    - name: Fiesteros
+      prefab: {fileID: 6342478993972401978, guid: 4d146f60ecdf34146bac7706410e123d, type: 3}
+      zones: 7
+      count: 10
+    - name: Fiesteros con petardos
+      prefab: {fileID: 4883065358689869950, guid: a0cafbf6432559347b122010e824ec7d, type: 3}
+      zones: 7
+      count: 8
+    - name: Cristales
+      prefab: {fileID: 7526553662483168943, guid: 266565069e2eae344bc7d3b28a44f9e2, type: 3}
+      zones: 7
+      count: 4
+    extraTrafficDensity: 0.2
+  oilTurnFallSpeed: 3
+  oilMinLean: 0.3
+  oilStraightFallSpeed: 6
+  glassFallSpeed: 3
+  leashFallSpeed: 1.5
+  dogDetectRadius: 7
+  dogChaseSpeed: 6
+  dogWanderSpeed: 1.2
+  dogBiteDistance: 1.1
+  dogGiveUpTime: 4
+  dogCooldown: 6
+  firecrackerRange: 9
+  firecrackerInterval: {x: 2.5, y: 5}
+  firecrackerFuse: 1.2
+  firecrackerBlastRadius: 2.2
+  firecrackerScatter: 1.5
+  firecrackerRoadReach: 4
+  partyFirecrackerInterval: {x: 1.2, y: 2.6}
+  partyFirecrackerRange: 14
+  partyFirecrackerScatter: 1.2
