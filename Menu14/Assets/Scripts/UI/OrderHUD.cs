@@ -96,10 +96,14 @@ public class OrderHUD : MonoBehaviour
             text = $"Encargo de {gm.ActiveOrder.customerName} · {FormatTime()}";
             if (gm.OrderIntegrity < 1f) text += $" · {IntegrityPercent(gm)} %";
         }
+        else if (gm.HasAcceptedOrder)
+        {
+            text = $"Recoge el encargo de {gm.AcceptedOrder.customerName} en el estante del Dragón Negro";
+        }
         else
         {
             text = gm.HasDeliveriesLeft
-                ? "Recoge el siguiente encargo en la puerta del Dragón Negro"
+                ? "Acepta un encargo en la pantalla del Dragón Negro"
                 : "No quedan encargos esta noche";
         }
 

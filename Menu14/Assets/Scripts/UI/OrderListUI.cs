@@ -65,6 +65,7 @@ public class OrderListUI : MonoBehaviour
 
     private Color ColorFor(GameManager.OrderStatus status) => status switch
     {
+        GameManager.OrderStatus.Accepted => inProgressColor,
         GameManager.OrderStatus.InProgress => inProgressColor,
         GameManager.OrderStatus.Delivered => deliveredColor,
         GameManager.OrderStatus.Lost => lostColor,
@@ -73,6 +74,7 @@ public class OrderListUI : MonoBehaviour
 
     private static string LabelFor(GameManager.OrderStatus status) => status switch
     {
+        GameManager.OrderStatus.Accepted => "ACEPTADO · RECÓGELO",
         GameManager.OrderStatus.InProgress => "EN CURSO",
         GameManager.OrderStatus.Delivered => "ENTREGADO",
         GameManager.OrderStatus.Lost => "PERDIDO",
