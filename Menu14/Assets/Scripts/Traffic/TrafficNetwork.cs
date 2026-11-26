@@ -130,7 +130,7 @@ public class TrafficNetwork : MonoBehaviour
                 Node other = n.links[i];
                 foreach (TrafficBlocker blocker in blockers)
                 {
-                    if (!blocker.isActiveAndEnabled || !blocker.BlocksRoad(n.position, other.position, roadHalfWidth)) continue;
+                    if (!blocker.enabled || !blocker.gameObject.activeInHierarchy || !blocker.BlocksRoad(n.position, other.position, roadHalfWidth)) continue;
                     n.links.RemoveAt(i);   // el sentido contrario se quita al recorrer 'other'
                     blockedRoads.Add((n, other));
                     break;
