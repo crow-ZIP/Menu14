@@ -317,7 +317,7 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.3
+  m_Radius: 0.1
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
@@ -361,17 +361,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ScooterController
   maxSpeed: 15
-  acceleration: 1
-  brakeForce: 5
-  rollingDrag: 0.5
-  maxReverseSpeed: 1
-  reverseAcceleration: 1
+  acceleration: 5
+  brakeForce: 20
+  rollingDrag: 1
+  maxReverseSpeed: 5
+  reverseAcceleration: 5
   stopThreshold: 0.3
   blockedTolerance: 0.5
-  maxLeanAngle: 20
-  leanSpeed: 1
-  returnSpeed: 1.5
-  turnSpeed: 70
+  maxLeanAngle: 30
+  leanSpeed: 5
+  returnSpeed: 2
+  turnSpeed: 100
   cameraRollFactor: 0.5
   maxStepHeight: 0.3
   stepSpeedKeep: 0.85
@@ -771,7 +771,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
-  m_AdditionalShaderChannelsFlag: 0
+  m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 0
@@ -1199,7 +1199,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
