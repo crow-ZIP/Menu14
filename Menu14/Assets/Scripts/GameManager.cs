@@ -47,6 +47,7 @@ public class GameManager : MonoBehaviour
     public DeliveryRequest ActiveOrder { get; private set; }
     public bool HasActiveOrder => ActiveOrder != null;
     public event System.Action<DeliveryRequest> OnOrderLost;
+    public float OrderIntegrity { get; private set; } = 1f;
 
     // ---- Estado de cada pedido de la noche (para la lista de encargos del móvil) ----
     public enum OrderStatus { Pending, InProgress, Delivered, Lost }
@@ -175,11 +176,16 @@ public class GameManager : MonoBehaviour
     }
 
     // ---- Pedidos y sospecha ----
-    public void TakeOrder(DeliveryRequest order) => ActiveOrder = order;
+    public void TakeOrder(DeliveryRequest order)
+    {
+        ActiveOrder = order;
+        OrderIntegrity = 1f;
+    }
+
     public void CompleteOrder()
     {
         if (!HasActiveOrder) return;
-        int reward = ActiveOrder.reward;
+        int reward = Mathf.RoundToInt(ActiveOrder.reward * OrderIntegrity);
         SetActiveOrderStatus(OrderStatus.Delivered);
         ActiveOrder = null;
         AddNightMoney(reward);
@@ -204,6 +210,21 @@ public class GameManager : MonoBehaviour
         Debug.Log($"{lost.customerName} se ha cansado de esperar: encargo perdido");
     }
 
+    // Lo llama ScooterCrash en cada caída. Con la integridad a 0 el encargo se pierde.
+    public void DamageActiveOrder(float amount)
+    {
+        if (!HasActiveOrder || IsGameOver) return;
+
+        OrderIntegrity = Mathf.Max(0f, OrderIntegrity - amount);
+        if (OrderIntegrity > 0.001f) return;
+
+        DeliveryRequest lost = ActiveOrder;
+        SetActiveOrderStatus(OrderStatus.Lost);
+        ActiveOrder = null;
+        OnOrderLost?.Invoke(lost);
+        Debug.Log($"El encargo de {lost.customerName} ha quedado destrozado");
+    }
+
     // ---- Reparto: qué pedido de la noche toca ahora ----
     private int nextDeliveryIndex;
     public bool HasDeliveriesLeft => nextDeliveryIndex < CurrentNight.deliveries.Count;
@@ -214,6 +235,7 @@ public class GameManager : MonoBehaviour
         if (HasActiveOrder || !HasDeliveriesLeft) return false;
 
         ActiveOrder = CurrentNight.deliveries[nextDeliveryIndex];
+        OrderIntegrity = 1f;
         nextDeliveryIndex++;
         SetActiveOrderStatus(OrderStatus.InProgress);
         return true;

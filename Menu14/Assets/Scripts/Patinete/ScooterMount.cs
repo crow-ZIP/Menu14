@@ -28,9 +28,16 @@ public class ScooterMount : MonoBehaviour
     const float PlayerRadius = 0.35f;
     const float PlayerHeight = 1.8f;
 
+    public float RemountTimeLeft => Mathf.Max(0f, remountTime - Time.time);
+    public float RemountDuration { get; private set; }
+    public bool CanMountNow => CanMount();
+
+    const float ThrowLift = 0.2f;
+
     ScooterController scooter;
     Collider scooterCollider;
     InputAction interactAction;
+    float remountTime;
 
     void Awake()
     {
@@ -58,6 +65,7 @@ public class ScooterMount : MonoBehaviour
     bool CanMount()
     {
         if (player == null || !player.activeInHierarchy) return false;
+        if (RemountTimeLeft > 0f) return false;
         Vector3 offset = player.transform.position - transform.position;
         offset.y = 0f;
         return offset.magnitude <= mountDistance;
@@ -67,6 +75,7 @@ public class ScooterMount : MonoBehaviour
     {
         player.SetActive(false);
         SetRiderObjects(true);
+        scooter.GetUp();
         scooter.SetRidden(true);
         // PlayerLook libera el ratón en OnDisable
         Cursor.lockState = CursorLockMode.Locked;
@@ -78,6 +87,42 @@ public class ScooterMount : MonoBehaviour
         if (Mathf.Abs(scooter.Speed) > maxDismountSpeed) return;
         if (!FindDismountPosition(out Vector3 feet)) return;
 
+        Dismount(feet);
+    }
+
+    public void ThrowOff(float remountDelay, Vector3 launchVelocity)
+    {
+        if (!scooter.IsRidden) return;
+
+        Vector3 horizontal = new Vector3(launchVelocity.x, 0f, launchVelocity.z);
+        Vector3 ahead = horizontal.sqrMagnitude > 0.01f ? horizontal.normalized : transform.forward;
+        Vector3[] directions = { ahead, -transform.right, transform.right, -ahead };
+
+        if (!FindFreeSpot(directions, ThrowLift, out Vector3 feet, out Vector3 side))
+        {
+            feet = GroundCenter() + Vector3.up * ThrowLift;
+            side = ahead;
+        }
+        if (side != ahead)
+            horizontal = (ahead + side).normalized * horizontal.magnitude;
+
+        scooter.Fall();
+        Dismount(feet);
+        remountTime = Time.time + remountDelay;
+        RemountDuration = remountDelay;
+
+        var movement = player.GetComponent<PlayerMovement>();
+        if (movement != null) movement.Launch(horizontal + Vector3.up * launchVelocity.y);
+    }
+
+    Vector3 GroundCenter()
+    {
+        float groundY = scooterCollider != null ? scooterCollider.bounds.min.y : transform.position.y;
+        return new Vector3(transform.position.x, groundY, transform.position.z);
+    }
+
+    void Dismount(Vector3 feet)
+    {
         scooter.SetRidden(false);
         SetRiderObjects(false);
 
@@ -88,9 +133,13 @@ public class ScooterMount : MonoBehaviour
 
     bool FindDismountPosition(out Vector3 feet)
     {
-        float groundY = scooterCollider != null ? scooterCollider.bounds.min.y : transform.position.y;
-        Vector3 center = new Vector3(transform.position.x, groundY, transform.position.z);
         Vector3[] directions = { -transform.right, transform.right, -transform.forward };
+        return FindFreeSpot(directions, 0f, out feet, out _);
+    }
+
+    bool FindFreeSpot(Vector3[] directions, float lift, out Vector3 feet, out Vector3 chosen)
+    {
+        Vector3 center = GroundCenter() + Vector3.up * lift;
 
         foreach (Vector3 dir in directions)
         {
@@ -100,11 +149,13 @@ public class ScooterMount : MonoBehaviour
             if (!Physics.CheckCapsule(bottom, top, PlayerRadius, dismountBlockMask, QueryTriggerInteraction.Ignore))
             {
                 feet = candidate;
+                chosen = dir;
                 return true;
             }
         }
 
         feet = default;
+        chosen = default;
         return false;
     }
 

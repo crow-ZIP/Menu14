@@ -10,14 +10,27 @@ public class PlayerMovement : MonoBehaviour
     [Tooltip("Aceleración de la gravedad (negativa)")]
     public float gravity = -9.8f;
 
+    [Tooltip("Frenado (m/s²) del empujón de una caída cuando tocas el suelo")]
+    public float launchGroundDrag = 14f;
+
+    [Tooltip("Frenado (m/s²) del empujón de una caída mientras vuelas")]
+    public float launchAirDrag = 2f;
+
     private CharacterController charController;
     private InputAction moveAction;
     private float verticalSpeed;
+    private Vector3 launchVelocity;
 
     void Start()
     {
         charController = GetComponent<CharacterController>();
         moveAction = InputSystem.actions.FindAction("Player/Move");
+    }
+
+    public void Launch(Vector3 velocity)
+    {
+        launchVelocity = new Vector3(velocity.x, 0f, velocity.z);
+        verticalSpeed = velocity.y;
     }
 
     void Update()
@@ -34,6 +47,10 @@ public class PlayerMovement : MonoBehaviour
         else
             verticalSpeed += gravity * Time.deltaTime;
 
+        float drag = charController.isGrounded ? launchGroundDrag : launchAirDrag;
+        launchVelocity = Vector3.MoveTowards(launchVelocity, Vector3.zero, drag * Time.deltaTime);
+
+        movement += launchVelocity;
         movement.y = verticalSpeed;
         charController.Move(movement * Time.deltaTime);
     }
