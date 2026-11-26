@@ -49,8 +49,12 @@ public class GameManager : MonoBehaviour
     public event System.Action<DeliveryRequest> OnOrderLost;
     public float OrderIntegrity { get; private set; } = 1f;
 
+    // ---- Encargo aceptado en la pantalla del restaurante que aún no se ha recogido (null = ninguno) ----
+    public DeliveryRequest AcceptedOrder { get; private set; }
+    public bool HasAcceptedOrder => AcceptedOrder != null;
+
     // ---- Estado de cada pedido de la noche (para la lista de encargos del móvil) ----
-    public enum OrderStatus { Pending, InProgress, Delivered, Lost }
+    public enum OrderStatus { Pending, Accepted, InProgress, Delivered, Lost }
     private OrderStatus[] orderStatus;   // uno por pedido de CurrentNight.deliveries
     public event System.Action OnOrdersChanged;
 
@@ -98,7 +102,7 @@ public class GameManager : MonoBehaviour
         TotalMoney = 0;
         IsGameOver = false;
         ActiveOrder = null;
-        nextDeliveryIndex = 0;
+        AcceptedOrder = null;
         ResetOrderStatus();
         OnSuspicionChanged?.Invoke(Suspicion);
         OnMoneyChanged?.Invoke();
@@ -125,6 +129,7 @@ public class GameManager : MonoBehaviour
         TotalMoney += surplus;
         NightMoney = 0;
         ActiveOrder = null;
+        AcceptedOrder = null;
         OnMoneyChanged?.Invoke();
         Debug.Log($"Noche {CurrentNight.nightNumber} completada: intereses {interest} €, +{surplus} € a la deuda. " +
                   $"Deuda pagada: {TotalMoney} / {totalMoneyGoal} €");
@@ -138,7 +143,6 @@ public class GameManager : MonoBehaviour
         if (CurrentNightIndex < nights.Length - 1)
         {
             CurrentNightIndex++;
-            nextDeliveryIndex = 0;
             ResetOrderStatus();
             LoadScene(RestaurantScene);
         }
@@ -155,6 +159,7 @@ public class GameManager : MonoBehaviour
         if (IsGameOver) return;
         IsGameOver = true;
         ActiveOrder = null;
+        AcceptedOrder = null;
         Debug.Log($"PARTIDA PERDIDA: {reason}");
         ReleaseCursor();
         BackToMenu();
@@ -225,18 +230,41 @@ public class GameManager : MonoBehaviour
         Debug.Log($"El encargo de {lost.customerName} ha quedado destrozado");
     }
 
-    // ---- Reparto: qué pedido de la noche toca ahora ----
-    private int nextDeliveryIndex;
-    public bool HasDeliveriesLeft => nextDeliveryIndex < CurrentNight.deliveries.Count;
+    // ---- Reparto: el jugador acepta un encargo en la pantalla y lo recoge en el mostrador ----
+    public bool HasDeliveriesLeft => HasAcceptedOrder || FirstPendingOrder() >= 0;
 
-    // Te da el siguiente pedido de la noche. Devuelve false si ya llevas uno o no quedan.
-    public bool TakeNextOrder()
+    // Solo se puede aceptar uno a la vez, y no mientras llevas otro encima.
+    public bool CanAcceptOrder => !HasActiveOrder && !HasAcceptedOrder && !IsGameOver;
+
+    // Índice del primer encargo pendiente de esta noche, o -1 si no queda ninguno.
+    public int FirstPendingOrder()
     {
-        if (HasActiveOrder || !HasDeliveriesLeft) return false;
+        for (int i = 0; i < CurrentNight.deliveries.Count; i++)
+            if (GetOrderStatus(i) == OrderStatus.Pending) return i;
+        return -1;
+    }
 
-        ActiveOrder = CurrentNight.deliveries[nextDeliveryIndex];
+    // Lo llama la interfaz de la pantalla de pedidos con el índice del encargo en CurrentNight.deliveries.
+    public bool AcceptOrder(int index)
+    {
+        if (!CanAcceptOrder) return false;
+        if (index < 0 || index >= CurrentNight.deliveries.Count) return false;
+        if (GetOrderStatus(index) != OrderStatus.Pending) return false;
+
+        AcceptedOrder = CurrentNight.deliveries[index];
+        orderStatus[index] = OrderStatus.Accepted;
+        OnOrdersChanged?.Invoke();
+        return true;
+    }
+
+    // Lo llama OrderPickup: el encargo aceptado pasa a ser el que llevas y empieza a contar su tiempo.
+    public bool PickUpAcceptedOrder()
+    {
+        if (!HasAcceptedOrder || HasActiveOrder || IsGameOver) return false;
+
+        ActiveOrder = AcceptedOrder;
+        AcceptedOrder = null;
         OrderIntegrity = 1f;
-        nextDeliveryIndex++;
         SetActiveOrderStatus(OrderStatus.InProgress);
         return true;
     }
