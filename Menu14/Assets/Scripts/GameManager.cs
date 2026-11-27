@@ -106,12 +106,18 @@ public class GameManager : MonoBehaviour
         ResetOrderStatus();
         OnSuspicionChanged?.Invoke(Suspicion);
         OnMoneyChanged?.Invoke();
-        LoadScene(RestaurantScene);
+        LoadScene(CityScene);   // el restaurante está dentro de City
     }
 
     public void GoToCity() => LoadScene(CityScene);
     public void GoToRestaurant() => LoadScene(RestaurantScene);
     public void BackToMenu() => LoadScene(MainMenuScene);
+
+    // Se puede terminar la noche desde el PC cuando ya están pagados los intereses
+    // o cuando no queda ningún encargo (ni pendiente, ni aceptado, ni encima).
+    public bool NightInterestPaid => NightMoney >= NightGoal;
+    public bool NoOrdersLeft => !HasDeliveriesLeft && !HasActiveOrder;
+    public bool CanEndNight => !IsGameOver && !IsLoading && (NightInterestPaid || NoOrdersLeft);
 
     // Fin de la noche: pagar intereses, el excedente va a la deuda, y ver si se gana, se pierde o se sigue.
     public void CompleteNight()
@@ -144,7 +150,7 @@ public class GameManager : MonoBehaviour
         {
             CurrentNightIndex++;
             ResetOrderStatus();
-            LoadScene(RestaurantScene);
+            LoadScene(CityScene);   // recargar City reinicia la ciudad para la noche nueva
         }
         else
         {
