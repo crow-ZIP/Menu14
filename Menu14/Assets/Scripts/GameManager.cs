@@ -12,6 +12,7 @@ public class GameManager : MonoBehaviour
     public const string MainMenuScene = "MainMenu";
     public const string RestaurantScene = "Restaurant";
     public const string CityScene = "City";
+    public const string NightSummaryScene = "NightSummary";
 
     [SerializeField] private NightConfig[] nights;
 
@@ -29,6 +30,12 @@ public class GameManager : MonoBehaviour
     public int MaxSuspicion => maxSuspicion;
     public bool IsGameOver { get; private set; }
 
+    // ---- Resultado de la última partida (lo enseña EndScreenUI en el menú) ----
+    public enum GameResult { None, Victory, Defeat }
+    public GameResult LastResult { get; private set; }
+    public string LastReason { get; private set; }
+    public void ClearLastResult() { LastResult = GameResult.None; LastReason = null; }
+
     // ---- Sospecha (se mantiene entre noches; solo se reinicia en partida nueva) ----
     public int Suspicion { get; private set; }
     public event System.Action<int> OnSuspicionChanged;   // nuevo valor
@@ -42,6 +49,14 @@ public class GameManager : MonoBehaviour
     public int NightGoal => CurrentNight.moneyGoal;
     public int NightSurplus => Mathf.Max(0, NightMoney - NightGoal);
     public event System.Action OnMoneyChanged;
+
+    // ---- Resumen de la última noche completada (lo enseña NightSummaryUI) ----
+    public int LastNightNumber { get; private set; }
+    public int LastNightEarned { get; private set; }
+    public int LastNightInterest { get; private set; }
+    public int LastNightSurplus { get; private set; }
+    public int LastNightDelivered { get; private set; }
+    public int LastNightLost { get; private set; }
 
     // ---- Pedido que lleva el jugador ahora mismo (null = ninguno) ----
     public DeliveryRequest ActiveOrder { get; private set; }
@@ -101,17 +116,28 @@ public class GameManager : MonoBehaviour
         NightMoney = 0;
         TotalMoney = 0;
         IsGameOver = false;
+        ClearLastResult();
         ActiveOrder = null;
         AcceptedOrder = null;
         ResetOrderStatus();
         OnSuspicionChanged?.Invoke(Suspicion);
         OnMoneyChanged?.Invoke();
-        LoadScene(RestaurantScene);
+        LoadScene(CityScene);   // el restaurante está dentro de City
     }
 
     public void GoToCity() => LoadScene(CityScene);
     public void GoToRestaurant() => LoadScene(RestaurantScene);
-    public void BackToMenu() => LoadScene(MainMenuScene);
+    public void BackToMenu()
+    {
+        ReleaseCursor();   // si ibas en patinete, nadie más suelta el ratón
+        LoadScene(MainMenuScene);
+    }
+
+    // Se puede terminar la noche desde el PC cuando ya están pagados los intereses
+    // o cuando no queda ningún encargo (ni pendiente, ni aceptado, ni encima).
+    public bool NightInterestPaid => NightMoney >= NightGoal;
+    public bool NoOrdersLeft => !HasDeliveriesLeft && !HasActiveOrder;
+    public bool CanEndNight => !IsGameOver && !IsLoading && (NightInterestPaid || NoOrdersLeft);
 
     // Fin de la noche: pagar intereses, el excedente va a la deuda, y ver si se gana, se pierde o se sigue.
     public void CompleteNight()
@@ -126,6 +152,15 @@ public class GameManager : MonoBehaviour
         }
 
         int surplus = NightMoney - interest;
+
+        // Guardar el resumen antes de pasar a la noche siguiente
+        LastNightNumber = CurrentNight.nightNumber;
+        LastNightEarned = NightMoney;
+        LastNightInterest = interest;
+        LastNightSurplus = surplus;
+        LastNightDelivered = CountOrders(OrderStatus.Delivered);
+        LastNightLost = CountOrders(OrderStatus.Lost);
+
         TotalMoney += surplus;
         NightMoney = 0;
         ActiveOrder = null;
@@ -144,7 +179,8 @@ public class GameManager : MonoBehaviour
         {
             CurrentNightIndex++;
             ResetOrderStatus();
-            LoadScene(RestaurantScene);
+            ReleaseCursor();
+            LoadScene(NightSummaryScene);   // desde el resumen, "Siguiente noche" carga City de nuevo
         }
         else
         {
@@ -153,11 +189,13 @@ public class GameManager : MonoBehaviour
     }
 
     // ---- Fin de partida ----
-    // De momento solo escriben en consola y vuelven al menú. Más adelante, una pantalla propia.
+    // Guardan el resultado y vuelven al menú, donde EndScreenUI lo enseña.
     public void GameOver(string reason)
     {
         if (IsGameOver) return;
         IsGameOver = true;
+        LastResult = GameResult.Defeat;
+        LastReason = reason;
         ActiveOrder = null;
         AcceptedOrder = null;
         Debug.Log($"PARTIDA PERDIDA: {reason}");
@@ -168,6 +206,8 @@ public class GameManager : MonoBehaviour
     private void Victory()
     {
         IsGameOver = true;
+        LastResult = GameResult.Victory;
+        LastReason = $"Has pagado toda la deuda ({TotalMoney} / {totalMoneyGoal} €)";
         Debug.Log($"¡HAS GANADO! Deuda pagada: {TotalMoney} / {totalMoneyGoal} €");
         ReleaseCursor();
         BackToMenu();
@@ -267,6 +307,16 @@ public class GameManager : MonoBehaviour
         OrderIntegrity = 1f;
         SetActiveOrderStatus(OrderStatus.InProgress);
         return true;
+    }
+
+    // Cuántos pedidos de esta noche están en ese estado.
+    private int CountOrders(OrderStatus status)
+    {
+        EnsureOrderStatus();
+        int count = 0;
+        foreach (OrderStatus s in orderStatus)
+            if (s == status) count++;
+        return count;
     }
 
     // Estado del pedido número 'index' de esta noche.

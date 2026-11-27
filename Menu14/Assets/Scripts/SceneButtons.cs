@@ -9,4 +9,14 @@ public class SceneButtons : MonoBehaviour
     public void GoToRestaurant() => GameManager.Instance.GoToRestaurant();
     public void CompleteNight() => GameManager.Instance.CompleteNight();
     public void BackToMenu() => GameManager.Instance.BackToMenu();
+
+    // Cierra el juego. En el editor, para el modo Play (Application.Quit no hace nada ahí).
+    public void QuitGame()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+    }
 }
