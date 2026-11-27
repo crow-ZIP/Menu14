@@ -9,6 +9,7 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance { get; private set; }
 
     public const string PersistentScene = "Persistent";
+    public const string SplashScene = "Splash";
     public const string MainMenuScene = "MainMenu";
     public const string RestaurantScene = "Restaurant";
     public const string CityScene = "City";
@@ -104,8 +105,8 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // Normal start (Play from Persistent, or a real build).
-        LoadScene(MainMenuScene);
+        // Normal start (Play from Persistent, or a real build): primero la pantalla de presentación
+        LoadScene(SplashScene);
     }
 
     // ---- Called from buttons / gameplay ----
@@ -379,7 +380,16 @@ public class GameManager : MonoBehaviour
     // ---- Scene switching ----
     public void LoadScene(string sceneName)
     {
-        if (!IsLoading) StartCoroutine(SwitchScene(sceneName));
+        if (IsLoading) return;
+
+        // Si la escena no está en Build Profiles > Scene List, Unity no puede cargarla
+        if (!Application.CanStreamedLevelBeLoaded(sceneName))
+        {
+            Debug.LogError($"No se puede cargar la escena '{sceneName}': añádela en File > Build Profiles > Scene List.");
+            return;
+        }
+
+        StartCoroutine(SwitchScene(sceneName));
     }
 
     private IEnumerator SwitchScene(string sceneName)
