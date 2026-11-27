@@ -12,6 +12,7 @@ public class GameManager : MonoBehaviour
     public const string MainMenuScene = "MainMenu";
     public const string RestaurantScene = "Restaurant";
     public const string CityScene = "City";
+    public const string NightSummaryScene = "NightSummary";
 
     [SerializeField] private NightConfig[] nights;
 
@@ -48,6 +49,14 @@ public class GameManager : MonoBehaviour
     public int NightGoal => CurrentNight.moneyGoal;
     public int NightSurplus => Mathf.Max(0, NightMoney - NightGoal);
     public event System.Action OnMoneyChanged;
+
+    // ---- Resumen de la última noche completada (lo enseña NightSummaryUI) ----
+    public int LastNightNumber { get; private set; }
+    public int LastNightEarned { get; private set; }
+    public int LastNightInterest { get; private set; }
+    public int LastNightSurplus { get; private set; }
+    public int LastNightDelivered { get; private set; }
+    public int LastNightLost { get; private set; }
 
     // ---- Pedido que lleva el jugador ahora mismo (null = ninguno) ----
     public DeliveryRequest ActiveOrder { get; private set; }
@@ -139,6 +148,15 @@ public class GameManager : MonoBehaviour
         }
 
         int surplus = NightMoney - interest;
+
+        // Guardar el resumen antes de pasar a la noche siguiente
+        LastNightNumber = CurrentNight.nightNumber;
+        LastNightEarned = NightMoney;
+        LastNightInterest = interest;
+        LastNightSurplus = surplus;
+        LastNightDelivered = CountOrders(OrderStatus.Delivered);
+        LastNightLost = CountOrders(OrderStatus.Lost);
+
         TotalMoney += surplus;
         NightMoney = 0;
         ActiveOrder = null;
@@ -157,7 +175,8 @@ public class GameManager : MonoBehaviour
         {
             CurrentNightIndex++;
             ResetOrderStatus();
-            LoadScene(CityScene);   // recargar City reinicia la ciudad para la noche nueva
+            ReleaseCursor();
+            LoadScene(NightSummaryScene);   // desde el resumen, "Siguiente noche" carga City de nuevo
         }
         else
         {
@@ -284,6 +303,16 @@ public class GameManager : MonoBehaviour
         OrderIntegrity = 1f;
         SetActiveOrderStatus(OrderStatus.InProgress);
         return true;
+    }
+
+    // Cuántos pedidos de esta noche están en ese estado.
+    private int CountOrders(OrderStatus status)
+    {
+        EnsureOrderStatus();
+        int count = 0;
+        foreach (OrderStatus s in orderStatus)
+            if (s == status) count++;
+        return count;
     }
 
     // Estado del pedido número 'index' de esta noche.
