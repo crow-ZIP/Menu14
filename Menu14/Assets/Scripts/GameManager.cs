@@ -29,6 +29,12 @@ public class GameManager : MonoBehaviour
     public int MaxSuspicion => maxSuspicion;
     public bool IsGameOver { get; private set; }
 
+    // ---- Resultado de la última partida (lo enseña EndScreenUI en el menú) ----
+    public enum GameResult { None, Victory, Defeat }
+    public GameResult LastResult { get; private set; }
+    public string LastReason { get; private set; }
+    public void ClearLastResult() { LastResult = GameResult.None; LastReason = null; }
+
     // ---- Sospecha (se mantiene entre noches; solo se reinicia en partida nueva) ----
     public int Suspicion { get; private set; }
     public event System.Action<int> OnSuspicionChanged;   // nuevo valor
@@ -101,6 +107,7 @@ public class GameManager : MonoBehaviour
         NightMoney = 0;
         TotalMoney = 0;
         IsGameOver = false;
+        ClearLastResult();
         ActiveOrder = null;
         AcceptedOrder = null;
         ResetOrderStatus();
@@ -159,11 +166,13 @@ public class GameManager : MonoBehaviour
     }
 
     // ---- Fin de partida ----
-    // De momento solo escriben en consola y vuelven al menú. Más adelante, una pantalla propia.
+    // Guardan el resultado y vuelven al menú, donde EndScreenUI lo enseña.
     public void GameOver(string reason)
     {
         if (IsGameOver) return;
         IsGameOver = true;
+        LastResult = GameResult.Defeat;
+        LastReason = reason;
         ActiveOrder = null;
         AcceptedOrder = null;
         Debug.Log($"PARTIDA PERDIDA: {reason}");
@@ -174,6 +183,8 @@ public class GameManager : MonoBehaviour
     private void Victory()
     {
         IsGameOver = true;
+        LastResult = GameResult.Victory;
+        LastReason = $"Has pagado toda la deuda ({TotalMoney} / {totalMoneyGoal} €)";
         Debug.Log($"¡HAS GANADO! Deuda pagada: {TotalMoney} / {totalMoneyGoal} €");
         ReleaseCursor();
         BackToMenu();
