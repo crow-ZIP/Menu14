@@ -26,6 +26,10 @@ public class OrderTerminal : MonoBehaviour
 
     public bool IsOpen { get; private set; }
 
+    // Para el menú de pausa: Esc también cierra esta pantalla, y no queremos que abra la pausa a la vez.
+    public static bool AnyOpen { get; private set; }
+    public static int LastClosedFrame { get; private set; } = -1;
+
     GameObject player;
     PlayerMovement movement;
     PlayerLook look;
@@ -67,6 +71,7 @@ public class OrderTerminal : MonoBehaviour
         }
 
         IsOpen = true;
+        AnyOpen = true;
         ordersScreen.SetActive(true);
         SetPlayerControl(false);
         opened.Invoke();
@@ -77,6 +82,8 @@ public class OrderTerminal : MonoBehaviour
         if (!IsOpen) return;
 
         IsOpen = false;
+        AnyOpen = false;
+        LastClosedFrame = Time.frameCount;
         ordersScreen.SetActive(false);
         SetPlayerControl(true);
         closed.Invoke();
@@ -132,6 +139,12 @@ public class OrderTerminal : MonoBehaviour
         if (gm.HasAcceptedOrder) return "Recoge el encargo en el estante";
         if (gm.FirstPendingOrder() < 0) return "No quedan encargos esta noche";
         return $"{KeyName()} · Aceptar encargo";
+    }
+
+    // Si la escena se descarga con la pantalla abierta (por ejemplo, al terminar la noche desde ella)
+    void OnDestroy()
+    {
+        if (IsOpen) AnyOpen = false;
     }
 
     void FindPlayer()

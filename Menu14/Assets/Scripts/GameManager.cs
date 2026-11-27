@@ -127,7 +127,11 @@ public class GameManager : MonoBehaviour
 
     public void GoToCity() => LoadScene(CityScene);
     public void GoToRestaurant() => LoadScene(RestaurantScene);
-    public void BackToMenu() => LoadScene(MainMenuScene);
+    public void BackToMenu()
+    {
+        ReleaseCursor();   // si ibas en patinete, nadie más suelta el ratón
+        LoadScene(MainMenuScene);
+    }
 
     // Se puede terminar la noche desde el PC cuando ya están pagados los intereses
     // o cuando no queda ningún encargo (ni pendiente, ni aceptado, ni encima).
