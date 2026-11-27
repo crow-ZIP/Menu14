@@ -287,6 +287,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   walkSpeed: 3.5
   gravity: -9.8
+  launchGroundDrag: 14
+  launchAirDrag: 2
 --- !u!114 &7284908974304387097
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -371,7 +373,7 @@ Camera:
     width: 1
     height: 1
   near clip plane: 0.05
-  far clip plane: 1000
+  far clip plane: 200
   field of view: 70
   orthographic: 0
   orthographic size: 5
