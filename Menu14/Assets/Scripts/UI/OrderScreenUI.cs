@@ -3,8 +3,8 @@ using TMPro;
 using UnityEngine;
 
 /// <summary>
-/// Interfaz del ordenador del restaurante. Muestra los encargos de la noche, uno por fila,
-/// y deja aceptar los pendientes. Ponlo en la raíz del prefab PC_Pedidos y arrastra ese objeto
+/// Interfaz del ordenador del restaurante. Muestra las ofertas de encargo de ahora, una por fila,
+/// y deja aceptarlas. Ponlo en la raíz del prefab PC_Pedidos y arrastra ese objeto
 /// al campo "Orders Screen" del OrderTerminal (PantallaPedidos): él se encarga de abrirlo y cerrarlo.
 /// </summary>
 public class OrderScreenUI : MonoBehaviour
@@ -20,15 +20,11 @@ public class OrderScreenUI : MonoBehaviour
     [Tooltip("Fila de ejemplo, desactivada. Se copia una vez por encargo")]
     [SerializeField] private OrderRowUI rowTemplate;
     [SerializeField] private UnityEngine.UI.Button closeButton;
-    [Tooltip("Botón para terminar la noche. Solo se puede pulsar si no quedan encargos o ya están pagados los intereses")]
+    [Tooltip("Botón para terminar la noche. Solo se puede pulsar si ya están pagados los intereses o has llegado al máximo de encargos")]
     [SerializeField] private UnityEngine.UI.Button endNightButton;
 
     [Header("Colores")]
     [SerializeField] private Color pendingColor = Color.white;
-    [SerializeField] private Color acceptedColor = new Color(0.45f, 0.75f, 1f);     // azul
-    [SerializeField] private Color inProgressColor = new Color(1f, 0.8f, 0.2f);     // amarillo
-    [SerializeField] private Color deliveredColor = new Color(0.45f, 0.85f, 0.45f); // verde
-    [SerializeField] private Color lostColor = new Color(1f, 0.35f, 0.3f);          // rojo
 
     private readonly List<OrderRowUI> rows = new List<OrderRowUI>();
 
@@ -58,9 +54,10 @@ public class OrderScreenUI : MonoBehaviour
     private void Refresh()
     {
         GameManager gm = GameManager.Instance;
-        var orders = gm.CurrentNight.deliveries;
+        var orders = gm.Offers;
 
-        if (title != null) title.text = $"Encargos · Noche {gm.CurrentNight.nightNumber}";
+        if (title != null)
+            title.text = $"Encargos · Noche {gm.CurrentNight.nightNumber} · Entregados {gm.DeliveredCount} / {gm.MaxDeliveries}";
         if (notice != null) notice.text = NoticeText(gm);
         if (endNightButton != null) endNightButton.interactable = gm.CanEndNight;
 
@@ -80,17 +77,12 @@ public class OrderScreenUI : MonoBehaviour
             if (!used) continue;
 
             DeliveryRequest order = orders[i];
-            GameManager.OrderStatus status = gm.GetOrderStatus(i);
+            rows[i].label.text = $"<b>{order.customerName}</b> · {order.reward} €\n" +
+                                 $"<size=70%>{Mathf.RoundToInt(order.distance)} m · {FormatTime(order.timeLimit)} para entregarlo</size>";
+            rows[i].label.color = pendingColor;
 
-            string line = $"<b>{order.customerName}</b> ({order.destinationId}) · {order.reward} €";
-            if (status == GameManager.OrderStatus.Delivered) line = $"<s>{line}</s>";
-            rows[i].label.text = $"{line}\n<size=70%>{LabelFor(status)}</size>";
-            rows[i].label.color = ColorFor(status);
-
-            // El botón solo aparece en los pendientes, y solo se puede pulsar si ahora se puede aceptar
-            bool pending = status == GameManager.OrderStatus.Pending;
-            rows[i].acceptButton.gameObject.SetActive(pending);
-            rows[i].acceptButton.interactable = pending && gm.CanAcceptOrder;
+            rows[i].acceptButton.gameObject.SetActive(true);
+            rows[i].acceptButton.interactable = gm.CanAcceptOrder;
         }
     }
 
@@ -121,28 +113,17 @@ public class OrderScreenUI : MonoBehaviour
 
     private static string NoticeText(GameManager gm)
     {
+        if (gm.NightTimeUp) return "Se ha acabado la noche";
         if (gm.HasActiveOrder) return "Ya llevas un encargo: entrégalo antes de aceptar otro";
         if (gm.HasAcceptedOrder) return "Tienes un encargo aceptado: recógelo en el estante";
-        if (gm.FirstPendingOrder() < 0) return "No quedan encargos esta noche: ya puedes terminarla";
+        if (gm.NoOrdersLeft) return "Has hecho todos los encargos de esta noche: ya puedes terminarla";
         if (gm.NightInterestPaid) return "Intereses pagados: elige un encargo o termina la noche";
         return "Elige un encargo para aceptarlo";
     }
 
-    private Color ColorFor(GameManager.OrderStatus status) => status switch
+    private static string FormatTime(float seconds)
     {
-        GameManager.OrderStatus.Accepted => acceptedColor,
-        GameManager.OrderStatus.InProgress => inProgressColor,
-        GameManager.OrderStatus.Delivered => deliveredColor,
-        GameManager.OrderStatus.Lost => lostColor,
-        _ => pendingColor,
-    };
-
-    private static string LabelFor(GameManager.OrderStatus status) => status switch
-    {
-        GameManager.OrderStatus.Accepted => "ACEPTADO · RECÓGELO EN EL ESTANTE",
-        GameManager.OrderStatus.InProgress => "EN CURSO",
-        GameManager.OrderStatus.Delivered => "ENTREGADO",
-        GameManager.OrderStatus.Lost => "PERDIDO",
-        _ => "PENDIENTE",
-    };
+        int s = Mathf.CeilToInt(seconds);
+        return $"{s / 60}:{s % 60:00}";
+    }
 }

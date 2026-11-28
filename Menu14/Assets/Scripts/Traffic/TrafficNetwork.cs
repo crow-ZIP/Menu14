@@ -249,25 +249,28 @@ public class TrafficNetwork : MonoBehaviour
     static bool Drivable(Node n) => !n.IsDeadEnd || n.isExit;
 
     /// <summary>Siguiente cruce al azar: sin dar media vuelta y sin meterse en callejones sin salida.</summary>
-    public Node RandomNext(Node from, Node via)
+    public Node RandomNext(Node from, Node via, bool stayInside = false)
     {
         var options = new List<Node>(4);
         foreach (Node n in via.links)
-            if (n != from && Drivable(n)) options.Add(n);
+            if (n != from && Drivable(n) && !(stayInside && n.IsDeadEnd)) options.Add(n);
+        if (options.Count == 0)
+            foreach (Node n in via.links)
+                if (n != from && Drivable(n)) options.Add(n);
         if (options.Count == 0)
             foreach (Node n in via.links)
                 if (n != from) options.Add(n);
         return options.Count > 0 ? options[Random.Range(0, options.Count)] : from;
     }
 
-    public bool RandomLane(out Node from, out Node to)
+    public bool RandomLane(out Node from, out Node to, bool stayInside = false)
     {
         from = to = null;
         if (lanes.Count == 0) return false;
         for (int i = 0; i < 20; i++)
         {
             (from, to) = lanes[Random.Range(0, lanes.Count)];
-            if (Drivable(to)) return true;
+            if (stayInside ? !to.IsDeadEnd : Drivable(to)) return true;
         }
         return false;
     }

@@ -13,15 +13,11 @@ MonoBehaviour:
   m_Name: Night1
   m_EditorClassIdentifier: Assembly-CSharp::NightConfig
   nightNumber: 1
-  deliveries:
-  - customerName: Ana
-    destinationId: Entrega1
-    timeLimit: 120
-    reward: 150
-  - customerName: Luis
-    destinationId: Entrega2
-    timeLimit: 120
-    reward: 150
+  duration: 300
+  maxDeliveries: 4
+  rewardMultiplier: 1
   policeCount: 2
+  motoPoliceCount: 1
+  patrolCarCount: 0
   trafficDensity: 0.3
   moneyGoal: 100

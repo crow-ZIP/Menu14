@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -16,9 +17,12 @@ public class GameManager : MonoBehaviour
     public const string NightSummaryScene = "NightSummary";
 
     [SerializeField] private NightConfig[] nights;
+    [Tooltip("Cifras de los encargos: ofertas a la vez, pago y tiempo según la distancia, nombres de clientes")]
+    [SerializeField] private DeliveryConfig deliveryConfig;
 
     public int CurrentNightIndex { get; private set; }
     public NightConfig CurrentNight => nights[CurrentNightIndex];
+    public NightConfig GetNight(int index) => nights[Mathf.Clamp(index, 0, nights.Length - 1)];
     public bool IsLoading { get; private set; }
 
     [Header("Partida")]
@@ -69,10 +73,27 @@ public class GameManager : MonoBehaviour
     public DeliveryRequest AcceptedOrder { get; private set; }
     public bool HasAcceptedOrder => AcceptedOrder != null;
 
-    // ---- Estado de cada pedido de la noche (para la lista de encargos del móvil) ----
+    // ---- Encargos de la noche: ofertas de la pantalla del PC y los que ya se han aceptado ----
     public enum OrderStatus { Pending, Accepted, InProgress, Delivered, Lost }
-    private OrderStatus[] orderStatus;   // uno por pedido de CurrentNight.deliveries
+    private readonly List<DeliveryRequest> offers = new List<DeliveryRequest>();
+    private readonly List<DeliveryRequest> takenOrders = new List<DeliveryRequest>();
+    private readonly Dictionary<DeliveryRequest, OrderStatus> orderStatus = new Dictionary<DeliveryRequest, OrderStatus>();
+    private readonly OrderGenerator generator = new OrderGenerator();
+    public IReadOnlyList<DeliveryRequest> Offers => offers;
+    public IReadOnlyList<DeliveryRequest> TakenOrders => takenOrders;
+    public int DeliveredCount { get; private set; }
+    public int LostCount { get; private set; }
+    public int MaxDeliveries => CurrentNight.maxDeliveries;
+    public int DeliveriesLeft => Mathf.Max(0, MaxDeliveries - DeliveredCount);
     public event System.Action OnOrdersChanged;
+
+    // ---- Reloj de la noche ----
+    public float NightTimeLeft { get; private set; }
+    public bool NightRunning { get; private set; }
+    public bool NightTimeUp => NightRunning && NightTimeLeft <= 0f;
+    public bool InGracePeriod => NightTimeUp && HasActiveOrder;
+    private bool nightClosed;
+    private Coroutine endNightRoutine;
 
     private string currentScene;
 
@@ -89,6 +110,12 @@ public class GameManager : MonoBehaviour
     {
         if (Instance != null) { Destroy(gameObject); return; }
         Instance = this;
+
+        if (deliveryConfig == null)
+        {
+            Debug.LogWarning("GameManager sin DeliveryConfig: se usan los valores por defecto");
+            deliveryConfig = ScriptableObject.CreateInstance<DeliveryConfig>();
+        }
     }
 
     private void Start()
@@ -101,6 +128,7 @@ public class GameManager : MonoBehaviour
             {
                 currentScene = s.name;
                 SceneManager.SetActiveScene(s);
+                if (s.name == CityScene) BeginNight();
                 return;
             }
         }
@@ -120,7 +148,7 @@ public class GameManager : MonoBehaviour
         ClearLastResult();
         ActiveOrder = null;
         AcceptedOrder = null;
-        ResetOrderStatus();
+        ClearNight();
         OnSuspicionChanged?.Invoke(Suspicion);
         OnMoneyChanged?.Invoke();
         LoadScene(CityScene);   // el restaurante está dentro de City
@@ -131,19 +159,92 @@ public class GameManager : MonoBehaviour
     public void BackToMenu()
     {
         ReleaseCursor();   // si ibas en patinete, nadie más suelta el ratón
+        StopNightClock();
         LoadScene(MainMenuScene);
     }
 
-    // Se puede terminar la noche desde el PC cuando ya están pagados los intereses
-    // o cuando no queda ningún encargo (ni pendiente, ni aceptado, ni encima).
+    // Se puede terminar la noche desde el PC, sin llevar un encargo encima, cuando ya están pagados
+    // los intereses o cuando ya has entregado el máximo de la noche.
     public bool NightInterestPaid => NightMoney >= NightGoal;
-    public bool NoOrdersLeft => !HasDeliveriesLeft && !HasActiveOrder;
-    public bool CanEndNight => !IsGameOver && !IsLoading && (NightInterestPaid || NoOrdersLeft);
+    public bool NoOrdersLeft => DeliveriesLeft == 0;
+    public bool CanEndNight => NightRunning && !nightClosed && endNightRoutine == null && !IsGameOver && !IsLoading
+                               && !HasActiveOrder && (NightInterestPaid || NoOrdersLeft);
+
+    private void Update()
+    {
+        if (!NightRunning || nightClosed || IsGameOver || IsLoading || NightTimeLeft <= 0f) return;
+
+        NightTimeLeft = Mathf.Max(0f, NightTimeLeft - Time.deltaTime);
+        if (NightTimeLeft <= 0f) OnNightTimeUp();
+    }
+
+    private void BeginNight()
+    {
+        ClearNight();
+        ActiveOrder = null;
+        AcceptedOrder = null;
+        generator.Reset();
+        if (generator.PointCount == 0) Debug.LogWarning("No hay ningún DeliveryPoint en la escena: no saldrán encargos");
+
+        NightTimeLeft = CurrentNight.duration;
+        NightRunning = true;
+        RefillOffers();
+        OnOrdersChanged?.Invoke();
+    }
+
+    private void ClearNight()
+    {
+        StopNightClock();
+        offers.Clear();
+        takenOrders.Clear();
+        orderStatus.Clear();
+        DeliveredCount = 0;
+        LostCount = 0;
+        NightTimeLeft = 0f;
+        nightClosed = false;
+        OnOrdersChanged?.Invoke();
+    }
+
+    private void StopNightClock()
+    {
+        NightRunning = false;
+        if (endNightRoutine != null) StopCoroutine(endNightRoutine);
+        endNightRoutine = null;
+    }
+
+    private void OnNightTimeUp()
+    {
+        offers.Clear();
+        if (HasAcceptedOrder)
+        {
+            takenOrders.Remove(AcceptedOrder);
+            orderStatus.Remove(AcceptedOrder);
+            AcceptedOrder = null;
+        }
+        OnOrdersChanged?.Invoke();
+
+        if (!HasActiveOrder) EndNightSoon();
+    }
+
+    private void EndNightSoon()
+    {
+        if (nightClosed || endNightRoutine != null) return;
+        endNightRoutine = StartCoroutine(EndNightAfterDelay());
+    }
+
+    private IEnumerator EndNightAfterDelay()
+    {
+        yield return new WaitForSeconds(deliveryConfig.nightEndDelay);
+        endNightRoutine = null;
+        CompleteNight();
+    }
 
     // Fin de la noche: pagar intereses, el excedente va a la deuda, y ver si se gana, se pierde o se sigue.
     public void CompleteNight()
     {
-        if (IsGameOver) return;
+        if (IsGameOver || nightClosed) return;
+        nightClosed = true;
+        StopNightClock();
 
         int interest = NightGoal;
         if (NightMoney < interest)
@@ -159,8 +260,8 @@ public class GameManager : MonoBehaviour
         LastNightEarned = NightMoney;
         LastNightInterest = interest;
         LastNightSurplus = surplus;
-        LastNightDelivered = CountOrders(OrderStatus.Delivered);
-        LastNightLost = CountOrders(OrderStatus.Lost);
+        LastNightDelivered = DeliveredCount;
+        LastNightLost = LostCount;
 
         TotalMoney += surplus;
         NightMoney = 0;
@@ -179,7 +280,6 @@ public class GameManager : MonoBehaviour
         if (CurrentNightIndex < nights.Length - 1)
         {
             CurrentNightIndex++;
-            ResetOrderStatus();
             ReleaseCursor();
             AudioManager.Play(Sfx.NightComplete);
             LoadScene(NightSummaryScene);   // desde el resumen, "Siguiente noche" carga City de nuevo
@@ -243,6 +343,7 @@ public class GameManager : MonoBehaviour
             : $"+{reward} €", NoticeKind.Good);
         AddNightMoney(reward);
         Debug.Log($"+{reward} €. Esta noche: {NightMoney} / {NightGoal} €");
+        AfterOrderFinished();
     }
 
     // Suma (o resta, si es negativo) al dinero de esta noche. Nunca baja de 0.
@@ -269,6 +370,7 @@ public class GameManager : MonoBehaviour
         AudioManager.Play(Sfx.OrderLost);
         OnOrderLost?.Invoke(lost);
         Debug.Log($"{lost.customerName} se ha cansado de esperar: encargo perdido");
+        AfterOrderFinished();
     }
 
     // Lo llama ScooterCrash en cada caída. Con la integridad a 0 el encargo se pierde.
@@ -276,7 +378,7 @@ public class GameManager : MonoBehaviour
     {
         if (!HasActiveOrder || IsGameOver) return;
 
-        OrderIntegrity = Mathf.Max(0f, OrderIntegrity - amount);
+        OrderIntegrity = InGracePeriod ? 0f : Mathf.Max(0f, OrderIntegrity - amount);
         if (OrderIntegrity > 0.001f) return;
 
         DeliveryRequest lost = ActiveOrder;
@@ -285,31 +387,36 @@ public class GameManager : MonoBehaviour
         AudioManager.Play(Sfx.OrderLost);
         OnOrderLost?.Invoke(lost);
         Debug.Log($"El encargo de {lost.customerName} ha quedado destrozado");
+        AfterOrderFinished();
+    }
+
+    private void AfterOrderFinished()
+    {
+        if (NightTimeUp) EndNightSoon();
+        else RefillOffers();
+        OnOrdersChanged?.Invoke();
     }
 
     // ---- Reparto: el jugador acepta un encargo en la pantalla y lo recoge en el mostrador ----
-    public bool HasDeliveriesLeft => HasAcceptedOrder || FirstPendingOrder() >= 0;
+    public bool HasDeliveriesLeft => HasAcceptedOrder || offers.Count > 0;
 
     // Solo se puede aceptar uno a la vez, y no mientras llevas otro encima.
-    public bool CanAcceptOrder => !HasActiveOrder && !HasAcceptedOrder && !IsGameOver;
+    public bool CanAcceptOrder => NightRunning && !NightTimeUp && !nightClosed && !IsGameOver
+                                  && !HasActiveOrder && !HasAcceptedOrder;
 
-    // Índice del primer encargo pendiente de esta noche, o -1 si no queda ninguno.
-    public int FirstPendingOrder()
-    {
-        for (int i = 0; i < CurrentNight.deliveries.Count; i++)
-            if (GetOrderStatus(i) == OrderStatus.Pending) return i;
-        return -1;
-    }
-
-    // Lo llama la interfaz de la pantalla de pedidos con el índice del encargo en CurrentNight.deliveries.
+    // Lo llama la interfaz de la pantalla de pedidos con el índice de la oferta en Offers.
     public bool AcceptOrder(int index)
     {
-        if (!CanAcceptOrder) return false;
-        if (index < 0 || index >= CurrentNight.deliveries.Count) return false;
-        if (GetOrderStatus(index) != OrderStatus.Pending) return false;
+        if (!CanAcceptOrder || index < 0 || index >= offers.Count) return false;
 
-        AcceptedOrder = CurrentNight.deliveries[index];
-        orderStatus[index] = OrderStatus.Accepted;
+        DeliveryRequest order = offers[index];
+        offers.RemoveAt(index);
+        AcceptedOrder = order;
+        takenOrders.Add(order);
+        orderStatus[order] = OrderStatus.Accepted;
+        generator.MarkUsed(order);
+
+        RefillOffers();
         OnOrdersChanged?.Invoke();
         return true;
     }
@@ -326,43 +433,35 @@ public class GameManager : MonoBehaviour
         return true;
     }
 
-    // Cuántos pedidos de esta noche están en ese estado.
-    private int CountOrders(OrderStatus status)
+    private void RefillOffers()
     {
-        EnsureOrderStatus();
-        int count = 0;
-        foreach (OrderStatus s in orderStatus)
-            if (s == status) count++;
-        return count;
+        if (!NightRunning || NightTimeUp) return;
+
+        int inHand = HasActiveOrder || HasAcceptedOrder ? 1 : 0;
+        int target = Mathf.Min(deliveryConfig.offersOnScreen, DeliveriesLeft - inHand);
+
+        var busy = new List<DeliveryRequest>(offers);
+        if (HasActiveOrder) busy.Add(ActiveOrder);
+        if (HasAcceptedOrder) busy.Add(AcceptedOrder);
+
+        while (offers.Count < target)
+        {
+            DeliveryRequest order = generator.Create(deliveryConfig, CurrentNight, busy);
+            if (order == null) break;
+            offers.Add(order);
+            busy.Add(order);
+        }
     }
 
-    // Estado del pedido número 'index' de esta noche.
-    public OrderStatus GetOrderStatus(int index)
-    {
-        EnsureOrderStatus();
-        return orderStatus[index];
-    }
-
-    // Se crea al primer uso, así también funciona si pulsas Play directamente en una escena de prueba.
-    private void EnsureOrderStatus()
-    {
-        int count = CurrentNight.deliveries.Count;
-        if (orderStatus == null || orderStatus.Length != count)
-            orderStatus = new OrderStatus[count];   // todos empiezan en Pending
-    }
-
-    private void ResetOrderStatus()
-    {
-        orderStatus = null;
-        OnOrdersChanged?.Invoke();
-    }
+    public OrderStatus GetOrderStatus(DeliveryRequest order) =>
+        order != null && orderStatus.TryGetValue(order, out OrderStatus status) ? status : OrderStatus.Pending;
 
     private void SetActiveOrderStatus(OrderStatus status)
     {
-        int index = CurrentNight.deliveries.IndexOf(ActiveOrder);
-        if (index < 0) return;
-        EnsureOrderStatus();
-        orderStatus[index] = status;
+        if (ActiveOrder == null) return;
+        orderStatus[ActiveOrder] = status;
+        if (status == OrderStatus.Delivered) DeliveredCount++;
+        if (status == OrderStatus.Lost) LostCount++;
         OnOrdersChanged?.Invoke();
     }
 
@@ -380,7 +479,8 @@ public class GameManager : MonoBehaviour
     {
         if (IsGameOver) return;
 
-        if (HasActiveOrder)
+        bool lostOrder = HasActiveOrder;
+        if (lostOrder)
         {
             DeliveryRequest lost = ActiveOrder;
             SetActiveOrderStatus(OrderStatus.Lost);
@@ -394,6 +494,7 @@ public class GameManager : MonoBehaviour
         AddNightMoney(-bailCost);
         Debug.Log($"¡Pillado por la policía! Fianza: -{bailCost} €. Sospecha = {Suspicion + suspicionPenalty}");
         AddSuspicion(suspicionPenalty);
+        if (lostOrder && !IsGameOver) AfterOrderFinished();
     }
 
     // ---- Scene switching ----
@@ -425,5 +526,6 @@ public class GameManager : MonoBehaviour
         currentScene = sceneName;
 
         IsLoading = false;
+        if (sceneName == CityScene) BeginNight();
     }
 }

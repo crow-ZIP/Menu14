@@ -94,8 +94,7 @@ public class OrderTerminal : MonoBehaviour
         var gm = GameManager.Instance;
         if (gm == null) return;
 
-        int index = gm.FirstPendingOrder();
-        if (index >= 0 && gm.AcceptOrder(index))
+        if (gm.Offers.Count > 0 && gm.AcceptOrder(0))
             Debug.Log($"Encargo aceptado: {gm.AcceptedOrder.customerName}. Recógelo en el mostrador");
     }
 
@@ -137,7 +136,7 @@ public class OrderTerminal : MonoBehaviour
 
         if (gm.HasActiveOrder) return "Ya llevas un encargo";
         if (gm.HasAcceptedOrder) return "Recoge el encargo en el estante";
-        if (gm.FirstPendingOrder() < 0) return "No quedan encargos esta noche";
+        if (gm.Offers.Count == 0) return "No quedan encargos esta noche";
         return $"{KeyName()} · Aceptar encargo";
     }
 

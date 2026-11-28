@@ -37,14 +37,17 @@ public class OrderListUI : MonoBehaviour
     private void Refresh()
     {
         GameManager gm = GameManager.Instance;
-        var orders = gm.CurrentNight.deliveries;
+        var orders = gm.TakenOrders;
 
-        if (title != null) title.text = $"Encargos · Noche {gm.CurrentNight.nightNumber}";
+        if (title != null)
+            title.text = $"Encargos · Noche {gm.CurrentNight.nightNumber} · {gm.DeliveredCount} / {gm.MaxDeliveries}";
         if (list == null) return;
 
         if (orders.Count == 0)
         {
-            list.text = "No hay encargos esta noche";
+            list.text = gm.Offers.Count > 0
+                ? $"Hay {gm.Offers.Count} encargos esperando en la pantalla del Dragón Negro"
+                : "No hay encargos ahora mismo";
             return;
         }
 
@@ -52,9 +55,9 @@ public class OrderListUI : MonoBehaviour
         for (int i = 0; i < orders.Count; i++)
         {
             DeliveryRequest order = orders[i];
-            GameManager.OrderStatus status = gm.GetOrderStatus(i);
+            GameManager.OrderStatus status = gm.GetOrderStatus(order);
 
-            string line = $"{order.customerName} ({order.destinationId}) · {order.reward} €";
+            string line = $"{order.customerName} · {order.reward} €";
             if (status == GameManager.OrderStatus.Delivered) line = $"<s>{line}</s>";   // tachado
 
             string hex = ColorUtility.ToHtmlStringRGB(ColorFor(status));

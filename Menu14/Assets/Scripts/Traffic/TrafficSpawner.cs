@@ -49,6 +49,22 @@ public class TrafficSpawner : MonoBehaviour
         Debug.Log($"Tráfico: {cars.Count} coches (densidad {density:0.00})");
     }
 
+    public void SpawnPatrolCars(GameObject prefab, int count)
+    {
+        if (network == null || prefab == null || count <= 0) return;
+        if (network.Nodes.Count == 0) network.Build();
+
+        int placed = 0;
+        for (int i = 0; i < count; i++)
+        {
+            TrafficCar car = CreateCar(prefab);
+            car.staysInMap = true;
+            if (PlaceOnRandomLane(car)) { cars.Add(car); placed++; }
+            else Destroy(car.gameObject);
+        }
+        Debug.Log($"Tráfico: {placed} coches de policía");
+    }
+
     TrafficCar CreateCar(GameObject model)
     {
         // Prefab ya preparado
@@ -94,7 +110,7 @@ public class TrafficSpawner : MonoBehaviour
     {
         for (int attempt = 0; attempt < 30; attempt++)
         {
-            if (!network.RandomLane(out var from, out var to)) return false;
+            if (!network.RandomLane(out var from, out var to, car.staysInMap)) return false;
             Vector3 a = network.LaneStart(from, to);
             Vector3 b = network.LaneEnd(from, to);
             if (Vector3.Distance(a, b) < 2f) continue;   // tramos de cero metros entre dos cruces pegados
@@ -114,6 +130,7 @@ public class TrafficSpawner : MonoBehaviour
     public void Recycle(TrafficCar car)
     {
         car.ReleaseCrossroad();
+        if (car.staysInMap && PlaceOnRandomLane(car)) return;
 
         List<TrafficNetwork.Node> ends = network.Exits;
         int start = Random.Range(0, Mathf.Max(1, ends.Count));
@@ -151,9 +168,19 @@ public class TrafficSpawner : MonoBehaviour
         return player == null || Vector3.Distance(player.transform.position, p) >= minPlayerDistance;
     }
 
+    public bool HiddenFromPlayer(Vector3 p)
+    {
+        if (!FarFromPlayer(p)) return false;
+        Camera cam = Camera.main;
+        if (cam == null) return true;
+        Vector3 v = cam.WorldToViewportPoint(p + Vector3.up);
+        return v.z <= 0f || v.x < -0.1f || v.x > 1.1f || v.y < -0.1f || v.y > 1.1f;
+    }
+
     bool IsFree(Vector3 p, TrafficCar ignore)
     {
         if (!FarFromPlayer(p)) return false;
+        if (ignore != null && ignore.staysInMap && !HiddenFromPlayer(p)) return false;
         if (LaneBlock.Covers(p, 3f)) return false;
         foreach (TrafficCar c in cars)
         {

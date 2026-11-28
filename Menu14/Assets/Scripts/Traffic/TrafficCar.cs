@@ -28,6 +28,8 @@ public class TrafficCar : MonoBehaviour
     [Header("Atascos")]
     [Tooltip("Si lleva este tiempo parado y el jugador está lejos, reaparece en otro sitio")]
     public float stuckTime = 10f;
+    [Tooltip("Nunca sale por los bordes del mapa, y si se atasca solo se recoloca donde el jugador no lo ve (coches de policía)")]
+    public bool staysInMap;
 
     [Header("Esquivar obstáculos")]
     [Tooltip("Velocidad (m/s) al pasar por el carril contrario para esquivar un obstáculo")]
@@ -109,7 +111,7 @@ public class TrafficCar : MonoBehaviour
     {
         from = a;
         to = b;
-        next = to.IsDeadEnd ? null : network.RandomNext(from, to);
+        next = to.IsDeadEnd ? null : network.RandomNext(from, to, staysInMap);
         turning = next != null && network.IsTurn(from, to, next);
         path.Clear();
         path.Add(network.LaneEnd(from, to));
@@ -125,7 +127,7 @@ public class TrafficCar : MonoBehaviour
 
         // 0) Atascos: si lleva mucho parado y el jugador está lejos, se recoloca en otro sitio
         stuckTimer = speed < 0.05f ? stuckTimer + dt : 0f;
-        if (stuckTimer > stuckTime && spawner != null && spawner.FarFromPlayer(pos))
+        if (stuckTimer > stuckTime && spawner != null && (staysInMap ? spawner.HiddenFromPlayer(pos) : spawner.FarFromPlayer(pos)))
         {
             spawner.Recycle(this);
             return;
