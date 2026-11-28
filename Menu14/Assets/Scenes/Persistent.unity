@@ -1846,9 +1846,9 @@ MonoBehaviour:
   select: {fileID: 8300000, guid: e2660734389fb2b4f973dbcbad2396b4, type: 3}
   orderAccepted: {fileID: 8300000, guid: 1cbfa4854c5077449bc3b6b51eea04b1, type: 3}
   orderPickedUp: {fileID: 8300000, guid: f9fc8ffc59b2c4447a17d10b04f3fe30, type: 3}
-  delivered: {fileID: 8300000, guid: b427287ece594be44a3c69195a11b59a, type: 3}
-  orderLost: {fileID: 8300000, guid: 55849b9302f0c9e4594da3f2c21d2386, type: 3}
-  interestPaid: {fileID: 8300000, guid: e4bdb957bf19fde42bbc58288702a7f7, type: 3}
+  delivered: {fileID: 8300000, guid: 91734a00e91d46209d459a5df6e81c82, type: 3}
+  orderLost: {fileID: 8300000, guid: 691754698b904f9ca23b202db9f87cfd, type: 3}
+  interestPaid: {fileID: 8300000, guid: 5d46625be40641e0ad97a1cbafbdbcbd, type: 3}
   wrongDestination: {fileID: 8300000, guid: e09cecece05b4424d9a0ee41b57599a7, type: 3}
   hurry: {fileID: 8300000, guid: b1edf1755205ee448848b2b74dc38063, type: 3}
   crash:
@@ -1864,9 +1864,9 @@ MonoBehaviour:
   dogBark: {fileID: 8300000, guid: 45490ee68cbea9841a9074c5ace162f0, type: 3}
   firecracker: {fileID: 8300000, guid: 63944d9cb5c681d47915e5c634497e4e, type: 3}
   firework: {fileID: 0}
-  nightComplete: {fileID: 8300000, guid: 47c9d329349be3346b1382fa1825e816, type: 3}
-  victory: {fileID: 8300000, guid: 88420f8233c1da24e826feb0d001ae8b, type: 3}
-  defeat: {fileID: 8300000, guid: 68112b3caf7efba4ebe49dd4456fb2a5, type: 3}
+  nightComplete: {fileID: 8300000, guid: a109437de90247078d42bf0d1b05e2d0, type: 3}
+  victory: {fileID: 8300000, guid: 7c283d6aaa224cc180d5d3afa743b92d, type: 3}
+  defeat: {fileID: 8300000, guid: a41f676f54aa49cfb54cef0c7a2d7c8b, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
