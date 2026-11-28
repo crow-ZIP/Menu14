@@ -97,7 +97,10 @@ public class OrderScreenUI : MonoBehaviour
     private void Accept(int index)
     {
         if (GameManager.Instance != null && GameManager.Instance.AcceptOrder(index))
+        {
+            Notifications.Show("Encargo aceptado: recógelo en el estante");
             Close();
+        }
     }
 
     private void EndNight()

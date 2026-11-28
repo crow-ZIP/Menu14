@@ -32,7 +32,7 @@ public class DeliveryPoint : MonoBehaviour
         }
         else
         {
-            Debug.Log("Este no es el destino del pedido");
+            Notifications.Show("Este no es el destino: mira el mapa del móvil", NoticeKind.Warning);
         }
     }
 }
