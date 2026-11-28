@@ -13,7 +13,11 @@ MonoBehaviour:
   m_Name: Night2
   m_EditorClassIdentifier: Assembly-CSharp::NightConfig
   nightNumber: 2
-  deliveries: []
-  policeCount: 4
+  duration: 300
+  maxDeliveries: 5
+  rewardMultiplier: 0.9
+  policeCount: 2
+  motoPoliceCount: 2
+  patrolCarCount: 0
   trafficDensity: 0.6
-  moneyGoal: 1000
+  moneyGoal: 125

@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 81762e91dd479f944931907b81d6422a, type: 3}
+  m_Name: DeliveryConfig
+  m_EditorClassIdentifier: Assembly-CSharp::DeliveryConfig
+  offersOnScreen: 3
+  baseReward: 70
+  rewardPerMeter: 0.5
+  rewardRounding: 5
+  baseTime: 20
+  secondsPerMeter: 0.25
+  timeRounding: 5
+  nightEndDelay: 2
+  customerNames:
+  - Ana
+  - Luis
+  - Marta
+  - Pepe
+  - "Luc\xEDa"
+  - Toni
+  - Carmen
+  - Vicent
+  - Amparo
+  - "Rub\xE9n"
+  - Nuria
+  - Paco
+  - Rosa
+  - "Iv\xE1n"
+  - Elena
+  - Jordi
+  - Sara
+  - Quique
+  - Laura
+  - Manolo

@@ -72,6 +72,13 @@ public class ObstacleConfig : ScriptableObject
     [Header("Noches especiales")]
     public NightEvent[] specialNights;
 
+    [Header("Policía con moto (motoPoliceCount de cada NightConfig)")]
+    public GameObject motoPolicePrefab;
+    [Tooltip("Solo sale en aceras a esta distancia (m) o más del centro del barrio: las afueras")]
+    public float motoPoliceMinCenterDistance = 40f;
+    [Tooltip("Metros mínimos entre cualquier policía que salga como obstáculo (también los de Nochevieja) y los puntos de entrega o el estante de recogida")]
+    public float motoPoliceKeepAway = 15f;
+
     [Header("Mancha de aceite")]
     [Tooltip("Si pasas girando por encima a más de esta velocidad (m/s), derrapas y te caes")]
     public float oilTurnFallSpeed = 3f;

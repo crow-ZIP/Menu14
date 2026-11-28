@@ -20,6 +20,7 @@ public class ObstacleSpawner : MonoBehaviour
     readonly List<Vector3> usedPositions = new List<Vector3>();
     readonly List<Vector3> laneBlockPositions = new List<Vector3>();
     readonly HashSet<ObstacleSpot> usedSpots = new HashSet<ObstacleSpot>();
+    List<Vector3> keepAwayPositions;
     GameObject fixedEvent;
 
     IEnumerator Start()
@@ -46,6 +47,9 @@ public class ObstacleSpawner : MonoBehaviour
             if (fixedEvent.GetComponentInChildren<TrafficBlocker>() != null && traffic != null)
                 traffic.RebuildNetwork();
         }
+
+        NightConfig nightConfig = GameManager.Instance != null ? GameManager.Instance.GetNight(nightIndex) : null;
+        if (nightConfig != null) PlaceMotoPolice(nightConfig.motoPoliceCount, spots);
 
         if (nightEvent != null && nightEvent.extraTrafficDensity > 0f && traffic != null)
             traffic.SpawnCars(nightEvent.extraTrafficDensity);
@@ -115,11 +119,45 @@ public class ObstacleSpawner : MonoBehaviour
         return placed;
     }
 
+    void PlaceMotoPolice(int count, List<ObstacleSpot> spots)
+    {
+        if (count <= 0 || config.motoPolicePrefab == null) return;
+
+        var candidates = spots.FindAll(s => s.zone == ObstacleZone.Acera
+                                            && FlatDistance(s.transform.position, config.mapCenter) >= config.motoPoliceMinCenterDistance
+                                            && !NearDeliveryOrPickup(s.transform.position));
+
+        int placed = 0;
+        while (placed < count && candidates.Count > 0)
+        {
+            int i = Random.Range(0, candidates.Count);
+            ObstacleSpot spot = candidates[i];
+            candidates.RemoveAt(i);
+            if (SpotIsFree(spot) && PlaceAt(config.motoPolicePrefab, "Policía con moto", spot)) placed++;
+        }
+    }
+
+    static float FlatDistance(Vector3 a, Vector3 b) => Vector2.Distance(new Vector2(a.x, a.z), new Vector2(b.x, b.z));
+
+    bool NearDeliveryOrPickup(Vector3 position)
+    {
+        if (keepAwayPositions == null)
+        {
+            keepAwayPositions = new List<Vector3>();
+            foreach (DeliveryPoint p in FindObjectsByType<DeliveryPoint>(FindObjectsSortMode.None)) keepAwayPositions.Add(p.transform.position);
+            OrderPickup pickup = FindFirstObjectByType<OrderPickup>();
+            if (pickup != null) keepAwayPositions.Add(pickup.transform.position);
+        }
+        return TooClose(position, keepAwayPositions, config.motoPoliceKeepAway);
+    }
+
     bool TryPlace(GameObject prefab, string label, ObstacleZone zones, List<ObstacleSpot> spots)
     {
         if (prefab == null) return false;
+        bool police = prefab.GetComponentInChildren<PoliceOfficer>() != null;
         foreach (ObstacleSpot spot in WeightedOrder(spots))
-            if ((spot.zone & zones) != 0 && SpotIsFree(spot) && PlaceAt(prefab, label, spot)) return true;
+            if ((spot.zone & zones) != 0 && SpotIsFree(spot) && !(police && NearDeliveryOrPickup(spot.transform.position))
+                && PlaceAt(prefab, label, spot)) return true;
         return false;
     }
 

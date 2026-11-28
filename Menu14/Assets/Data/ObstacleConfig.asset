@@ -163,6 +163,9 @@ MonoBehaviour:
       zones: 7
       count: 4
     extraTrafficDensity: 0.2
+  motoPolicePrefab: {fileID: 6183394010615754750, guid: ebff3b4ac9559634ba273039ac66a0ec, type: 3}
+  motoPoliceMinCenterDistance: 40
+  motoPoliceKeepAway: 15
   oilTurnFallSpeed: 3
   oilMinLean: 0.3
   oilStraightFallSpeed: 6
