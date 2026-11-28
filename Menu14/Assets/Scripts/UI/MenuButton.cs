@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 /// <summary>
 /// Efecto de los botones de menú: el botón seleccionado crece un poco.
@@ -12,6 +13,15 @@ public class MenuButton : MonoBehaviour, ISelectHandler, IDeselectHandler, IPoin
     [SerializeField] private float speed = 12f;
 
     private bool selected;
+    private float enabledAt;
+
+    private void Awake()
+    {
+        Button button = GetComponent<Button>();
+        if (button != null) button.onClick.AddListener(() => AudioManager.Play(Sfx.Click));
+    }
+
+    private void OnEnable() => enabledAt = Time.unscaledTime;
 
     private void OnDisable()
     {
@@ -26,7 +36,12 @@ public class MenuButton : MonoBehaviour, ISelectHandler, IDeselectHandler, IPoin
         transform.localScale = new Vector3(s, s, 1f);
     }
 
-    public void OnSelect(BaseEventData eventData) => selected = true;
+    public void OnSelect(BaseEventData eventData)
+    {
+        selected = true;
+        // Al abrir una pantalla su botón principal se selecciona solo: ahí no suena
+        if (Time.unscaledTime - enabledAt > 0.15f) AudioManager.Play(Sfx.Select);
+    }
     public void OnDeselect(BaseEventData eventData) => selected = false;
 
     public void OnPointerEnter(PointerEventData eventData)

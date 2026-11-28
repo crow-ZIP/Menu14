@@ -32,6 +32,7 @@ public class DeliveryPoint : MonoBehaviour
         }
         else
         {
+            AudioManager.Play(Sfx.WrongDestination);
             Notifications.Show("Este no es el destino: mira el mapa del móvil", NoticeKind.Warning);
         }
     }

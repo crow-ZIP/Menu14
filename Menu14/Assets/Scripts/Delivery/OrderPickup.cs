@@ -32,7 +32,10 @@ public class OrderPickup : MonoBehaviour
 
         string customer = gm.AcceptedOrder.customerName;
         if (gm.PickUpAcceptedOrder())
+        {
+            AudioManager.Play(Sfx.OrderPickedUp);
             Notifications.Show($"Encargo de {customer} recogido. ¡En marcha!");
+        }
     }
 
     void UpdatePrompt(bool show)

@@ -21,6 +21,7 @@ public class PoliceOfficer : MonoBehaviour
 
     float detection;
     float cooldownTimer;
+    float nextAlertSound;
 
     void Update()
     {
@@ -35,7 +36,13 @@ public class PoliceOfficer : MonoBehaviour
         GameManager gm = GameManager.Instance;
         bool carrying = gm != null && gm.HasActiveOrder && !gm.IsGameOver;
 
+        bool sawPlayer = SeesPlayer;
         SeesPlayer = carrying && CanSeePlayer();
+        if (SeesPlayer && !sawPlayer && Time.time >= nextAlertSound)
+        {
+            AudioManager.Play(Sfx.Detected);
+            nextAlertSound = Time.time + 3f;   // para que no suene sin parar si entras y sales del cono
+        }
         if (SeesPlayer) detection += Time.deltaTime;
         else detection -= forgetSpeed * Time.deltaTime;
         detection = Mathf.Clamp(detection, 0f, timeToDetect);

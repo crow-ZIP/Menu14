@@ -35,6 +35,7 @@ public class FireworksShow : MonoBehaviour
         mat.SetColor("_BaseColor", color);
         mat.SetColor("_EmissionColor", color * 1.6f);
 
+        AudioManager.PlayAt(Sfx.Firework, center, 0.6f);
         var root = new GameObject("Cohete").transform;
         root.SetParent(transform, false);
         root.position = center;
