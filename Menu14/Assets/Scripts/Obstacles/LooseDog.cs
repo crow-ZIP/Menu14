@@ -72,6 +72,7 @@ public class LooseDog : ObstacleBehaviour
                 {
                     Vector3 away = rider.transform.position - transform.position;
                     away.y = 0f;
+                    AudioManager.PlayAt(Sfx.DogBark, transform.position);
                     KnockOff(rider, CrashCause.Dog, away.sqrMagnitude > 0.01f ? away.normalized : rider.transform.forward);
                     GiveUp();
                     break;
@@ -96,6 +97,7 @@ public class LooseDog : ObstacleBehaviour
 
     void SetState(State next)
     {
+        if (next == State.Chase && state != State.Chase) AudioManager.PlayAt(Sfx.DogBark, transform.position);
         state = next;
         stateTime = 0f;
         if (ownerShout != null) ownerShout.SetActive(next == State.Chase);

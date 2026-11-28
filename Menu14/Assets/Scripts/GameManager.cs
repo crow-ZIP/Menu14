@@ -181,6 +181,7 @@ public class GameManager : MonoBehaviour
             CurrentNightIndex++;
             ResetOrderStatus();
             ReleaseCursor();
+            AudioManager.Play(Sfx.NightComplete);
             LoadScene(NightSummaryScene);   // desde el resumen, "Siguiente noche" carga City de nuevo
         }
         else
@@ -196,6 +197,7 @@ public class GameManager : MonoBehaviour
         if (IsGameOver) return;
         IsGameOver = true;
         LastResult = GameResult.Defeat;
+        AudioManager.Play(Sfx.Defeat);
         LastReason = reason;
         ActiveOrder = null;
         AcceptedOrder = null;
@@ -208,6 +210,7 @@ public class GameManager : MonoBehaviour
     {
         IsGameOver = true;
         LastResult = GameResult.Victory;
+        AudioManager.Play(Sfx.Victory);
         LastReason = $"Has pagado toda la deuda ({TotalMoney} / {totalMoneyGoal} €)";
         Debug.Log($"¡HAS GANADO! Deuda pagada: {TotalMoney} / {totalMoneyGoal} €");
         ReleaseCursor();
@@ -234,6 +237,7 @@ public class GameManager : MonoBehaviour
         int reward = Mathf.RoundToInt(ActiveOrder.reward * OrderIntegrity);
         SetActiveOrderStatus(OrderStatus.Delivered);
         ActiveOrder = null;
+        AudioManager.Play(Sfx.Delivered);
         Notifications.Show(OrderIntegrity < 0.999f
             ? $"+{reward} €  ·  encargo al {Mathf.RoundToInt(OrderIntegrity * 100f)} %"
             : $"+{reward} €", NoticeKind.Good);
@@ -249,7 +253,10 @@ public class GameManager : MonoBehaviour
         OnMoneyChanged?.Invoke();
 
         if (!wasPaid && NightInterestPaid && NightGoal > 0)
+        {
+            AudioManager.Play(Sfx.InterestPaid);
             Notifications.Show("¡Intereses cubiertos! Ya puedes terminar la noche en el PC", NoticeKind.Good);
+        }
     }
 
     // El cliente se ha cansado de esperar: pierdes el encargo sin cobrar (lo llama DeliveryTimer).
@@ -259,6 +266,7 @@ public class GameManager : MonoBehaviour
         DeliveryRequest lost = ActiveOrder;
         SetActiveOrderStatus(OrderStatus.Lost);
         ActiveOrder = null;
+        AudioManager.Play(Sfx.OrderLost);
         OnOrderLost?.Invoke(lost);
         Debug.Log($"{lost.customerName} se ha cansado de esperar: encargo perdido");
     }
@@ -274,6 +282,7 @@ public class GameManager : MonoBehaviour
         DeliveryRequest lost = ActiveOrder;
         SetActiveOrderStatus(OrderStatus.Lost);
         ActiveOrder = null;
+        AudioManager.Play(Sfx.OrderLost);
         OnOrderLost?.Invoke(lost);
         Debug.Log($"El encargo de {lost.customerName} ha quedado destrozado");
     }
@@ -379,6 +388,7 @@ public class GameManager : MonoBehaviour
             OnOrderLost?.Invoke(lost);
             Debug.Log($"Pedido perdido: {lost.customerName}");
         }
+        AudioManager.Play(Sfx.Caught);
         if (bailCost > 0) Notifications.Show($"-{bailCost} € de fianza", NoticeKind.Bad);
         if (suspicionPenalty > 0) Notifications.Show($"+{suspicionPenalty} de sospecha", NoticeKind.Bad);
         AddNightMoney(-bailCost);

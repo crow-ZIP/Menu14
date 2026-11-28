@@ -1789,6 +1789,84 @@ MonoBehaviour:
   goodColor: {r: 0.45, g: 0.85, b: 0.45, a: 1}
   badColor: {r: 1, g: 0.35, b: 0.3, a: 1}
   warningColor: {r: 1, g: 0.78, b: 0.34, a: 1}
+--- !u!1 &1395019024
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1892484313}
+  - component: {fileID: 1880187470}
+  m_Layer: 0
+  m_Name: Audio
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1892484313
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1395019024}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1880187470
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1395019024}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69199f1c1a9c41ec9244dba5a7f24e68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AudioManager
+  masterVolume: 1
+  musicVolume: 0.45
+  ambienceVolume: 0.35
+  sfxVolume: 0.9
+  motorVolume: 0.5
+  menuMusic: {fileID: 0}
+  gameMusic: {fileID: 0}
+  cityAmbience: {fileID: 8300000, guid: 391796ea912242944a2f97737f414a7e, type: 3}
+  scooterMotor: {fileID: 8300000, guid: ce118e44fd404b26b3a6be4aa684de3c, type: 3}
+  click: {fileID: 8300000, guid: 3725645f113577e4287415484938032a, type: 3}
+  select: {fileID: 8300000, guid: e2660734389fb2b4f973dbcbad2396b4, type: 3}
+  orderAccepted: {fileID: 8300000, guid: 1cbfa4854c5077449bc3b6b51eea04b1, type: 3}
+  orderPickedUp: {fileID: 8300000, guid: f9fc8ffc59b2c4447a17d10b04f3fe30, type: 3}
+  delivered: {fileID: 8300000, guid: b427287ece594be44a3c69195a11b59a, type: 3}
+  orderLost: {fileID: 8300000, guid: 55849b9302f0c9e4594da3f2c21d2386, type: 3}
+  interestPaid: {fileID: 8300000, guid: e4bdb957bf19fde42bbc58288702a7f7, type: 3}
+  wrongDestination: {fileID: 8300000, guid: e09cecece05b4424d9a0ee41b57599a7, type: 3}
+  hurry: {fileID: 8300000, guid: b1edf1755205ee448848b2b74dc38063, type: 3}
+  crash:
+  - {fileID: 8300000, guid: 7d36d19ba4f585a41b64244f8dcf9e4f, type: 3}
+  - {fileID: 8300000, guid: 1878cd079391ab544a8d3de32542b8e6, type: 3}
+  - {fileID: 8300000, guid: d5bc35875c9ee034191c8cdf1e7cdc28, type: 3}
+  - {fileID: 8300000, guid: f391bb941dc072346b3aab292a26f678, type: 3}
+  - {fileID: 8300000, guid: 5ff51b99ef604fa46b31727c2b85d5cf, type: 3}
+  - {fileID: 8300000, guid: 2dd6621489176fa4dba9741e75a18af4, type: 3}
+  - {fileID: 8300000, guid: 87262cd431bdd344baa342952ae06c24, type: 3}
+  caught: {fileID: 8300000, guid: 2201d97dd4812f9438da70b595e7a0c3, type: 3}
+  detected: {fileID: 8300000, guid: 98750d73cd5f2904ab228bb8ca53f254, type: 3}
+  dogBark: {fileID: 8300000, guid: 45490ee68cbea9841a9074c5ace162f0, type: 3}
+  firecracker: {fileID: 8300000, guid: 63944d9cb5c681d47915e5c634497e4e, type: 3}
+  firework: {fileID: 0}
+  nightComplete: {fileID: 8300000, guid: 47c9d329349be3346b1382fa1825e816, type: 3}
+  victory: {fileID: 8300000, guid: 88420f8233c1da24e826feb0d001ae8b, type: 3}
+  defeat: {fileID: 8300000, guid: 68112b3caf7efba4ebe49dd4456fb2a5, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -1796,3 +1874,4 @@ SceneRoots:
   - {fileID: 1127816647}
   - {fileID: 1496571363}
   - {fileID: 1636668913}
+  - {fileID: 1892484313}

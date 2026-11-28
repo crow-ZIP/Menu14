@@ -98,6 +98,7 @@ public class Firecrackers : ObstacleBehaviour
 
         if (spark != null) spark.gameObject.SetActive(false);
         if (flash != null) flash.gameObject.SetActive(true);
+        AudioManager.PlayAt(Sfx.Firecracker, target);
 
         if (TryGetRider(out ScooterController rider) && DistanceToRider(rider, target) <= Config.firecrackerBlastRadius)
         {

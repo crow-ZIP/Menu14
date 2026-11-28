@@ -98,6 +98,7 @@ public class OrderScreenUI : MonoBehaviour
     {
         if (GameManager.Instance != null && GameManager.Instance.AcceptOrder(index))
         {
+            AudioManager.Play(Sfx.OrderAccepted);
             Notifications.Show("Encargo aceptado: recógelo en el estante");
             Close();
         }

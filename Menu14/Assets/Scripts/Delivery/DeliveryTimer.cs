@@ -31,6 +31,7 @@ public class DeliveryTimer : MonoBehaviour
         if (TimeLeft <= hurryWarning && TimeLeft > 0f && warnedOrder != trackedOrder && trackedOrder.timeLimit > hurryWarning)
         {
             warnedOrder = trackedOrder;
+            AudioManager.Play(Sfx.Hurry);
             Notifications.Show($"¡Date prisa! Quedan {Mathf.CeilToInt(hurryWarning)} segundos", NoticeKind.Warning);
         }
         if (TimeLeft <= 0f) gm.ExpireOrder();
