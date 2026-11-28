@@ -234,6 +234,9 @@ public class GameManager : MonoBehaviour
         int reward = Mathf.RoundToInt(ActiveOrder.reward * OrderIntegrity);
         SetActiveOrderStatus(OrderStatus.Delivered);
         ActiveOrder = null;
+        Notifications.Show(OrderIntegrity < 0.999f
+            ? $"+{reward} €  ·  encargo al {Mathf.RoundToInt(OrderIntegrity * 100f)} %"
+            : $"+{reward} €", NoticeKind.Good);
         AddNightMoney(reward);
         Debug.Log($"+{reward} €. Esta noche: {NightMoney} / {NightGoal} €");
     }
@@ -241,8 +244,12 @@ public class GameManager : MonoBehaviour
     // Suma (o resta, si es negativo) al dinero de esta noche. Nunca baja de 0.
     public void AddNightMoney(int amount)
     {
+        bool wasPaid = NightInterestPaid;
         NightMoney = Mathf.Max(0, NightMoney + amount);
         OnMoneyChanged?.Invoke();
+
+        if (!wasPaid && NightInterestPaid && NightGoal > 0)
+            Notifications.Show("¡Intereses cubiertos! Ya puedes terminar la noche en el PC", NoticeKind.Good);
     }
 
     // El cliente se ha cansado de esperar: pierdes el encargo sin cobrar (lo llama DeliveryTimer).
@@ -372,6 +379,8 @@ public class GameManager : MonoBehaviour
             OnOrderLost?.Invoke(lost);
             Debug.Log($"Pedido perdido: {lost.customerName}");
         }
+        if (bailCost > 0) Notifications.Show($"-{bailCost} € de fianza", NoticeKind.Bad);
+        if (suspicionPenalty > 0) Notifications.Show($"+{suspicionPenalty} de sospecha", NoticeKind.Bad);
         AddNightMoney(-bailCost);
         Debug.Log($"¡Pillado por la policía! Fianza: -{bailCost} €. Sospecha = {Suspicion + suspicionPenalty}");
         AddSuspicion(suspicionPenalty);

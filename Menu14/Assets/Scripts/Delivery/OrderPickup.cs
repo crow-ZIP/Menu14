@@ -32,7 +32,7 @@ public class OrderPickup : MonoBehaviour
 
         string customer = gm.AcceptedOrder.customerName;
         if (gm.PickUpAcceptedOrder())
-            Debug.Log($"Pedido recogido: {customer} → {gm.ActiveOrder.destinationId}");
+            Notifications.Show($"Encargo de {customer} recogido. ¡En marcha!");
     }
 
     void UpdatePrompt(bool show)
